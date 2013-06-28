@@ -1,0 +1,84 @@
+<?php
+
+/**
+ * @file
+ * Module file for Reading Tool
+ */
+
+/**
+ * @defgroup reading AustESE Reading Tool
+ * @ingroup austese
+ * @{
+ * AustESE Reading Tool
+ *
+ */
+
+/**
+ * Implements hook_help().
+ *
+ */
+function reading_help($path, $arg) {
+  switch ($path) {
+    case 'reading':
+      return t('AustESE Reading Tool');
+    case 'admin/help#reading':
+      return t('AustESE Reading Tool');
+  }
+}
+
+/**
+ * Implements hook_permission().
+ *
+ */
+function reading_permission() {
+  return array(
+    'view reading tool' => array(
+      'title' => t('View reading tool'),
+      'description' => t('Allow users to view reading tool'),
+    )
+  );
+}
+
+/**
+ * Implements hook_menu().
+ *
+ *
+ * @see hook_menu()
+ * @see menu_example
+ */
+function reading_menu() {
+
+  $items['reading/%'] = array(
+    // 'title' => 'Reading Tool',
+    'page callback' => 'reading_view',
+    'access arguments' => array('view reading tool'),
+    'type' => MENU_CALLBACK
+  );
+  return $items;
+}
+function reading_view() {
+  $breadcrumb = array();
+  $breadcrumb[] = l('Home', '<front>');
+  $breadcrumb[] = l('Reading Tool', 'reading');
+  // $breadcrumb[] = t(drupal_get_title());
+  drupal_set_breadcrumb($breadcrumb);
+  $modulePath = drupal_get_path('module', 'reading');
+  drupal_add_css($modulePath . '/ui/css/app.css');
+  drupal_add_js($modulePath . '/ui/knockout-2.2.1.js');
+  drupal_add_js($modulePath . '/ui/sammy-0.7.4.min.js');
+  drupal_add_js($modulePath . '/ui/reading.js');
+  return theme('reading',array());
+}
+
+function reading_theme(){
+ return array(
+    'reading' => array(
+       'template' => 'ui/readingview',
+       'variables' => array()
+     )
+ );
+}
+
+/**
+ * @} End of "defgroup reading".
+ */

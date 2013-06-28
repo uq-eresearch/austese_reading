@@ -1,0 +1,10 @@
+name = AustESE Reading Tool
+description = Reading
+package = AustESE
+dependencies[] = libraries
+dependencies[] = repository
+core = 7.x
+version = "7.x-1.x-dev"
+project = "austese"
+
+
