@@ -63,12 +63,22 @@ function Transcription(data) {  // Resource
             jQuery.get(self.contentUrl(), function(data) {
                 self.transcriptionContents = data;
                 jQuery('#readingdisplay').html(data);
+
             });
         } else {
             jQuery('#readingdisplay').html(self.transcriptionContents);
         }
     }
 }
+
+function updateAnnotations(element) {
+
+    jQuery('#readingdisplay').removeAnnotator().data('id', dataId);
+    jQuery('#readingdisplay').annotationsEnabled = false;
+    console.log("enable anno on compare body", bodyEl)
+    enableAnnotationsOnElement(bodyEl);
+}
+
 
 function Artefact(data) {
     var self = this;
@@ -91,8 +101,7 @@ function Artefact(data) {
     }
 
     self.displayArtefact = function(artefact) {
-        var imageUrl = baseUrl + "resources/" + artefact.id();
-        jQuery('#readingdisplay').html(jQuery("<img>").attr("src", imageUrl));
+        location.hash = '/artefact/' + artefact.id();
     }
 }
 
@@ -152,10 +161,18 @@ function WorkModel(workId) {
 
     // Local page state
     self.activeVersion = ko.observable();
+    self.annotationsOn = ko.observable();
+
+    self.annotationsOn(true);
 
     // Local actions
     self.selectVersion = function(version) {
         location.hash = '/version/' + version.id();
+    }
+
+    self.toggleAnnotations = function() {
+        var state = self.annotationsOn();
+        self.annotationsOn(!state);
     }
 
     // Utility functions
@@ -198,6 +215,20 @@ function WorkModel(workId) {
             var mvdId = this.params['splat'];
         });
 
+        this.get(/\#\/artefact\/(.*)/, function() {
+            var imageUrl = baseUrl + "resources/" + this.params['splat'];
+            var resourceBase = 'http://localhost/repository/resources/';
+            var dataId = resourceBase + this.params['splat'] + '/content';
+
+            jQuery('#readingdisplay').removeAnnotator().data('id', dataId);
+            jQuery('#readingdisplay').annotationsEnabled = false;
+
+            jQuery('#readingdisplay').attr('data-id', dataId);
+            jQuery('#readingdisplay').html(jQuery("<img>").attr("src", imageUrl));
+
+            enableAnnotationsOnElement(jQuery('#readingdisplay'));
+        });
+
         // Do nothing when first loading
         this.get("", function() {});
     }).run();
@@ -206,11 +237,6 @@ function WorkModel(workId) {
 
 var workModel;
 jQuery(document).ready(function(){
-    // $.getJSON("/tasks", function(allData) {
-    //     var mappedTasks = $.map(allData, function(item) { return new Task(item) });
-    //     self.tasks(mappedTasks);
-    // });
-
     var workId = jQuery('#metadata').data('workid');
     workModel = new WorkModel(workId);
     ko.applyBindings(workModel);

@@ -7,7 +7,7 @@ $workId = arg(1);
 <div id="metadata" data-workid="<?php print $workId; ?>"></div>
 <h1 data-bind="text: workTitle"></h1>
 <div class="row">
-<div class="span6">
+<div class="span5">
 <div class="btn-group">
   <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
     Select Version
@@ -46,40 +46,7 @@ $workId = arg(1);
 </div>
 </div>
 
-<!--
-<h2>Versions</h2>
-<ul data-bind="foreach: versions">
-    <li>
-        <b>Version: </b><span data-bind="text: id"></span>
-        <span data-bind="text: name"></span>
-
-        <span data-bind="text: date"></span>
-
-        <span data-bind="text: publisher"></span>
-        <ul data-bind="foreach: transcriptions">
-            <li>
-                <b>Transcription: </b><a href="#" data-bind="click: displayTranscription">
-                    <span data-bind="text: filename"></span>
-                </a>
-            </li>
-        </ul>
-        <ul data-bind="foreach: artefacts">
-            <li>
-                <b>Artefact: </b>
-                <span data-bind="id"></span>
-                <ul data-bind="foreach: facsimiles">
-                    <li>
-                        <a href="#" data-bind="click: $parent.displayArtefact">
-                            <span data-bind="text: filename"></span>
-                        </a>
-                    </li>
-                </ul>
-            </li>
-        </ul>
-    </li> 
-</ul>
--->
-<div class="span6">
+<div class="span5">
 <h2>MVDs</h2>
 <ul data-bind="foreach: mvds">
     <li>
@@ -89,7 +56,13 @@ $workId = arg(1);
     </li>
 </ul>
 </div>
+
+<div class="span2">
+    Annotations: <a href="#" data-bind="click: toggleAnnotations"><span data-bind="text: annotationsOn"></span></a>
 </div>
 
+</div><!-- /row -->
 
-<div id="readingdisplay" class="well" style="width: 1000px; height: 500px; overflow: auto; overflow-x: hidden;"></div>
+<div class="row">
+    <div id="readingdisplay" class="well span11" style="height: 500px; overflow: auto; overflow-x: hidden;"></div>
+</div>
