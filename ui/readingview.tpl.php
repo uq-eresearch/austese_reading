@@ -33,7 +33,7 @@ $workId = arg(1);
     </ul>
     <ul data-bind="foreach: artefacts">
         <li>
-            <b>Facsimiles: </b>
+            <b>Artefact: </b>
             <ul data-bind="foreach: facsimiles">
                 <li>
                     <a href="#" data-bind="click: $parent.displayArtefact">
