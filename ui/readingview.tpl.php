@@ -6,6 +6,7 @@ $workId = arg(1);
 
 <div id="metadata" data-workid="<?php print $workId; ?>"></div>
 <h1 data-bind="text: workTitle"></h1>
+
 <div class="row">
 <div class="span5">
 <div class="btn-group">
@@ -44,7 +45,7 @@ $workId = arg(1);
         </li>
     </ul>
 </div>
-</div>
+</div><!-- /span5 -->
 
 <div class="span5">
 <h2>MVDs</h2>

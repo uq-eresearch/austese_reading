@@ -4,10 +4,11 @@ var $ = jQuery;
 var baseUrl = '/sites/all/modules/austese_repository/api/';
 
 // Utility functions
-getById = function(collection, id) {
+getById = function(collection, id, fieldname) {
+    if (!fieldname) fieldname = 'id';
     var contents = collection();
     for (var i = 0; i < contents.length; i++) {
-        if (contents[i].id() === id) {
+        if (contents[i][fieldname]() === id) {
             return contents[i];
         }
     }
@@ -38,21 +39,17 @@ function MVD(data) {
     this.compareUrl = ko.computed(function() { return "/collationtools/compare#" + self.name(); });
 
     this.displayTable = function() {
-        jQuery('#readingdisplay').html(
-        '<iframe src="'+self.tableUrl()+'" width="1000" height="490"/>'
-        );
+        location.hash = '/table/' + self.name();
     }
 
     this.displayCompare = function() {
-        jQuery('#readingdisplay').html(
-        '<iframe src="'+self.compareUrl()+'" width="1000" height="490"/>'
-        );
+        location.hash = '/compare/' + self.name();
     }
 
 }
 
 
-function Transcription(data) {  // Resource
+function DigitalResource(data) {  // Resource
     var self = this;
     this.filename = ko.observable(data.filename);
     this.id = ko.observable(data.id);
@@ -68,19 +65,9 @@ function Transcription(data) {  // Resource
 
 
     // Load MVDs
-    jQuery.ajax({
-        type: 'GET',
-        url: baseUrl + 'mvds/?q=' + data.id,
-        dataType: "json",
-        headers: {'Accept': 'application/json'},
-        success: function(mvdData){
-            for (var i = 0; i < mvdData.results.length; i++) {
-                if (getById(workModel.mvds, mvdData.results[i].id) == null) {
-                    workModel.mvds.push(new MVD(mvdData.results[i]));
-                }
-            }
-        }
-    });
+    self.loadMVDs = function() {
+
+    }
 
     self.displayTranscription = function() {
         jQuery('#readingdisplay').html('<b>Loading transcription...');
@@ -118,7 +105,7 @@ function Artefact(data) {
                     dataType: "json",
                     headers: {'Accept': 'application/json'}
                 }).then(function(result){
-                    var transcription = new Transcription(result)
+                    var transcription = new DigitalResource(result)
                     self.facsimiles.push(transcription);
                     return transcription;
                 })
@@ -157,7 +144,7 @@ function Version(data) {
                     dataType: "json",
                     headers: {'Accept': 'application/json'}
                 }).then(function(result){
-                    var transcription = new Transcription(result)
+                    var transcription = new DigitalResource(result)
                     self.transcriptions.push(transcription);
                     return transcription;
                 })
@@ -212,6 +199,15 @@ function WorkModel(workId) {
     self.selectVersion = function(version) {
         location.hash = '/version/' + version.id();
     }
+    self.getTranscriptions = function() {
+        var transcriptions = [];
+        $.each(workModel.versions(), function() {
+            $.each(this.transcriptions(), function() {
+                transcriptions.push(this);
+            })
+        });
+        return transcriptions;
+    }
 
 
     var queue = $({});
@@ -245,7 +241,27 @@ function WorkModel(workId) {
             );
         };
         var defer = $.when.apply($, versionLoadResponses);
-        defer.done(function allVersionsLoaded() {
+        defer.then(function() {
+            var defers = [],
+                transcriptions = workModel.getTranscriptions();
+            $.each(transcriptions, function() {
+                defers.push( 
+                    jQuery.ajax({
+                        type: 'GET',
+                        url: baseUrl + 'mvds/?q=' + this.id(),
+                        dataType: "json",
+                        headers: {'Accept': 'application/json'}
+                    }).then(function(mvdData) {
+                        $.each(mvdData.results, function() {
+                            if (getById(workModel.mvds, this.id) == null) {
+                                workModel.mvds.push(new MVD(this));
+                            }
+                        });
+                    })
+                    );
+            });
+            return $.when.apply($, defers);
+        }).done(function allVersionsLoaded() {
             console.log('all versions loaded');
 
             // Client-side routes
@@ -258,8 +274,27 @@ function WorkModel(workId) {
                     version.transcriptions()[0].displayTranscription();
                 });
 
-                this.get(/\#\/mvd\/(.*)/, function() {
-                    var mvdId = this.params['splat'];
+                this.get(/\#\/table\/(.*)/, function() {
+                    var mvdName = this.params.splat[0];
+
+                    var mvd = getById(self.mvds, mvdName, 'name');
+
+                    this.trigger('beforeDocLoaded');
+                    jQuery('#readingdisplay').html(
+                        '<iframe src="'+mvd.tableUrl()+'" width="100%" height="100%"/>'
+                    );
+                });
+
+
+                this.get(/\#\/compare\/(.*)/, function() {
+                    var mvdName = this.params.splat[0];
+
+                    var mvd = getById(self.mvds, mvdName, 'name');
+
+                    this.trigger('beforeDocLoaded');
+                    jQuery('#readingdisplay').html(
+                        '<iframe src="'+mvd.compareUrl()+'" width="100%" height="100%"/>'
+                    );
                 });
 
                 this.get('#/artefact/:artefactId', function() {
@@ -270,10 +305,11 @@ function WorkModel(workId) {
 
                     this.trigger('beforeDocLoaded');
 
-                    $('#readingdisplay').data('id', dataId);
+                    $('#readingdisplay').data('id', dataId).attr('data-id', dataId);
                     $('#readingdisplay').html($("<img>").attr("src", imageUrl));
 
-                    this.trigger('docLoaded');
+                    app.trigger('docLoaded');
+                    
 
                     if (!self.activeVersion()) {
                         var version = getVersionByArtefactId(self.versions, artefactId);
