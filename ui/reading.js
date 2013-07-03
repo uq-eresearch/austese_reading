@@ -57,7 +57,12 @@ function Transcription(data) {  // Resource
     this.filename = ko.observable(data.filename);
     this.id = ko.observable(data.id);
     this.uri = ko.observable(data.uri);
-    this.contentUrl = ko.computed(function() { return "/repository/resources/" + self.id() + "/content/raw"; });
+    this.rawContentUrl = ko.computed(function() {
+         return "/repository/resources/" + self.id() + "/content/raw"; 
+     });
+    this.dataUrl = ko.computed(function() {
+        return window.location.origin + "/repository/resources/" + self.id() + "/content";
+    })
 
     self.transcriptionContents = null;
 
@@ -80,25 +85,21 @@ function Transcription(data) {  // Resource
     self.displayTranscription = function() {
         jQuery('#readingdisplay').html('<b>Loading transcription...');
         if (!self.transcriptionContents) {
-            jQuery.get(self.contentUrl(), function(data) {
+            jQuery.get(self.rawContentUrl(), function(data) {
                 self.transcriptionContents = data;
+
+                $('#readingdisplay').data('id', self.dataUrl());
                 jQuery('#readingdisplay').html(data);
+                app.trigger('docLoaded');
 
             });
         } else {
+            $('#readingdisplay').data('id', self.dataUrl());
             jQuery('#readingdisplay').html(self.transcriptionContents);
+            app.trigger('docLoaded');
         }
     }
 }
-
-function updateAnnotations(element) {
-
-    jQuery('#readingdisplay').removeAnnotator().data('id', dataId);
-    jQuery('#readingdisplay').annotationsEnabled = false;
-    console.log("enable anno on compare body", bodyEl)
-    enableAnnotationsOnElement(bodyEl);
-}
-
 
 function Artefact(data) {
     var self = this;
@@ -186,7 +187,7 @@ function Version(data) {
         return $.when.apply($, defers);
     }
 }
-
+var app = null;
 function WorkModel(workId) {
     var self = this;
     // Data Fields from DB
@@ -247,11 +248,13 @@ function WorkModel(workId) {
         defer.done(function allVersionsLoaded() {
             console.log('all versions loaded');
 
-            // Client-side routes    
-            Sammy(function() {
+            // Client-side routes
+            app = $.sammy(function() {
                 this.get('#/version/:version', function() {
                     var version = getById(self.versions, this.params.version);
                     self.activeVersion(version);
+
+                    this.trigger('beforeDocLoaded');
                     version.transcriptions()[0].displayTranscription();
                 });
 
@@ -265,22 +268,39 @@ function WorkModel(workId) {
                     var resourceBase = 'http://localhost/repository/resources/';
                     var dataId = resourceBase + artefactId + '/content';
 
-                    jQuery('#readingdisplay').removeAnnotator().data('id', dataId);
-                    jQuery('#readingdisplay').annotationsEnabled = false;
+                    this.trigger('beforeDocLoaded');
 
-                    jQuery('#readingdisplay').attr('data-id', dataId);
-                    jQuery('#readingdisplay').html(jQuery("<img>").attr("src", imageUrl));
+                    $('#readingdisplay').data('id', dataId);
+                    $('#readingdisplay').html($("<img>").attr("src", imageUrl));
 
-                    enableAnnotationsOnElement(jQuery('#readingdisplay'));
+                    this.trigger('docLoaded');
 
-                    var version = getVersionByArtefactId(self.versions, artefactId)
-                    self.activeVersion(version);
+                    if (!self.activeVersion()) {
+                        var version = getVersionByArtefactId(self.versions, artefactId);
+                        self.activeVersion(version);
+                    }
+
+                });
+
+                this.bind('beforeDocLoaded', function() {
+                    console.log('beforeDocLoaded');
+                    $('#readingdisplay').removeAnnotator();
+                    $('#readingdisplay')[0].annotationsEnabled = false;
+                    $('#readingdisplay').removeData("id");
+
+                });
+                this.bind('docLoaded', function() {
+                    console.log('docLoaded');
+                    enableAnnotationsOnElement($('#readingdisplay')[0]);
 
                 });
 
                 // Do nothing when first loading
                 this.get("", function() {});
-            }).run();
+
+
+            });
+            app.run();
         });
     });
 
