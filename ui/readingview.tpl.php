@@ -37,7 +37,7 @@ $workId = arg(1);
             <b>Artefact: </b>
             <ul data-bind="foreach: facsimiles">
                 <li>
-                    <a href="#" data-bind="click: $parent.displayArtefact">
+                    <a href="#" data-bind="click: $parent.displayFacsimile">
                         <span data-bind="text: filename"></span>
                     </a>
                 </li>

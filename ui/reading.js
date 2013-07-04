@@ -15,14 +15,33 @@ getById = function(collection, id, fieldname) {
     return null;
 }
 
-function getVersionByArtefactId(versions, artefactId) {
+function getVersionByTranscriptionId(versions, id) {
+    var versions = versions();
+    for (var i = 0; i < versions.length; i++) {
+        var version = versions[i];
+        var transcriptions = version.transcriptions();
+        for (var j = 0; j < transcriptions.length; j++) {
+            var transcription = transcriptions[j];
+            if (transcription.id() == id) {
+                return [version, transcription];
+            }
+        }
+    }
+}
+
+function getVersionByFacsimileId(versions, objId, fieldname) {
+    if (!fieldname) fieldname = 'facsimiles';
     var versions = versions();
     for (var i = 0; i < versions.length; i++) {
         var version = versions[i];
         var artefacts = version.artefacts()
         for (var j = 0; j < artefacts.length; j++) {
-            if (artefacts[j].id() == artefactId) {
-                return version;
+            var artefact = artefacts[j];
+            for (var k = 0; k < artefact[fieldname]().length; k++) {
+                var obj = artefact[fieldname]()[k];
+                if (obj.id() == objId) {
+                    return version;
+                }
             }
         }
     }
@@ -63,28 +82,8 @@ function DigitalResource(data) {  // Resource
 
     self.transcriptionContents = null;
 
-
-    // Load MVDs
-    self.loadMVDs = function() {
-
-    }
-
     self.displayTranscription = function() {
-        jQuery('#readingdisplay').html('<b>Loading transcription...');
-        if (!self.transcriptionContents) {
-            jQuery.get(self.rawContentUrl(), function(data) {
-                self.transcriptionContents = data;
-
-                $('#readingdisplay').data('id', self.dataUrl());
-                jQuery('#readingdisplay').html(data);
-                app.trigger('docLoaded');
-
-            });
-        } else {
-            $('#readingdisplay').data('id', self.dataUrl());
-            jQuery('#readingdisplay').html(self.transcriptionContents);
-            app.trigger('docLoaded');
-        }
+        location.hash = '/transcription/' + self.id();
     }
 }
 
@@ -114,8 +113,8 @@ function Artefact(data) {
         return defers;
     }
 
-    self.displayArtefact = function(artefact) {
-        location.hash = '/artefact/' + artefact.id();
+    self.displayFacsimile = function(facsimile) {
+        location.hash = '/facsimile/' + facsimile.id();
     }
 }
 
@@ -270,7 +269,6 @@ function WorkModel(workId) {
                     var version = getById(self.versions, this.params.version);
                     self.activeVersion(version);
 
-                    this.trigger('beforeDocLoaded');
                     version.transcriptions()[0].displayTranscription();
                 });
 
@@ -297,11 +295,11 @@ function WorkModel(workId) {
                     );
                 });
 
-                this.get('#/artefact/:artefactId', function() {
-                    var artefactId = this.params.artefactId;
-                    var imageUrl = baseUrl + "resources/" + artefactId;
+                this.get('#/facsimile/:facsimileId', function() {
+                    var facsimileId = this.params.facsimileId;
+                    var imageUrl = baseUrl + "resources/" + facsimileId;
                     var resourceBase = 'http://localhost/repository/resources/';
-                    var dataId = resourceBase + artefactId + '/content';
+                    var dataId = resourceBase + facsimileId + '/content';
 
                     this.trigger('beforeDocLoaded');
 
@@ -312,10 +310,37 @@ function WorkModel(workId) {
                     
 
                     if (!self.activeVersion()) {
-                        var version = getVersionByArtefactId(self.versions, artefactId);
+                        var version = getVersionByFacsimileId(self.versions, facsimileId);
                         self.activeVersion(version);
                     }
+                });
 
+                this.get('#/transcription/:transcriptionId', function() {
+                    var transcriptionId = this.params.transcriptionId;
+                    var results = getVersionByTranscriptionId(self.versions, transcriptionId);
+                    var version = results[0];
+                    var transcription = results[1];
+
+                    this.trigger('beforeDocLoaded');
+                    $('#readingdisplay').html('<b>Loading transcription...');
+                    if (!transcription.transcriptionContents) {
+                        jQuery.get(transcription.rawContentUrl(), function(data) {
+                            transcription.transcriptionContents = data;
+
+                            $('#readingdisplay').data('id', transcription.dataUrl());
+                            jQuery('#readingdisplay').html(data);
+                            app.trigger('docLoaded');
+
+                        });
+                    } else {
+                        $('#readingdisplay').data('id', transcription.dataUrl());
+                        $('#readingdisplay').html(transcription.transcriptionContents);
+                        app.trigger('docLoaded');
+                    }
+
+                    if (!self.activeVersion()) {
+                        self.activeVersion(version);
+                    }
                 });
 
                 this.bind('beforeDocLoaded', function() {
