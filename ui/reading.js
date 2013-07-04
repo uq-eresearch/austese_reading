@@ -256,7 +256,13 @@ function WorkModel(workId) {
                     }
                     if (artefact) {
                         console.log('Artefact', artefact);
-                        return artefact.loadFacsimiles();
+                        if (artefact.loadFacsimiles)
+                            artefact.loadFacsimiles();
+                        else if ($.isArray(artefact)) {
+                            $.each(artefact, function() {
+                                this.loadFacsimiles();
+                            })
+                        }
                     }
                     return null;
                 })
