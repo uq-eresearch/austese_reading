@@ -96,6 +96,9 @@ function Artefact(data) {
     // Load Facsimile Details
     self.loadFacsimiles = function() {
         var defers = [];
+        if (!$.isArray(data.facsimiles)) {
+            return defers;
+        }
         for (var i = 0; i < data.facsimiles.length; i++) {
             defers.push(
                 jQuery.ajax({
