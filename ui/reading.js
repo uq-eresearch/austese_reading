@@ -104,9 +104,9 @@ function Artefact(data) {
                     dataType: "json",
                     headers: {'Accept': 'application/json'}
                 }).then(function(result){
-                    var transcription = new DigitalResource(result)
-                    self.facsimiles.push(transcription);
-                    return transcription;
+                    var digitalResource = new DigitalResource(result)
+                    self.facsimiles.push(digitalResource);
+                    return digitalResource;
                 })
             );
         }
@@ -117,7 +117,7 @@ function Artefact(data) {
             return left.filename() == right.filename() ? 0 : (left.filename() < right.filename() ? -1 : 1);
         });
         return artefact;
-    });
+    };
 
     self.displayFacsimile = function(facsimile) {
         location.hash = '/facsimile/' + facsimile.id();
