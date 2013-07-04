@@ -8,7 +8,7 @@ $workId = arg(1);
 <h1 data-bind="text: workTitle"></h1>
 
 <div class="row">
-<div class="span5">
+<div class="span6">
 <div class="btn-group">
   <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
     Select Version
@@ -45,9 +45,9 @@ $workId = arg(1);
         </li>
     </ul>
 </div>
-</div><!-- /span5 -->
+</div><!-- /span6 -->
 
-<div class="span5">
+<div class="span6">
 <h2>MVDs</h2>
 <ul data-bind="foreach: mvds">
     <li>
@@ -56,11 +56,12 @@ $workId = arg(1);
         <a data-bind="attr: { href: compareUrl}, click: displayCompare">Compare View</a>
     </li>
 </ul>
-</div>
-
+</div><!-- /span6 -->
+<!-- Enabling/disabling annotations needs more work yet
 <div class="span2">
     Annotations: <a href="#" data-bind="click: toggleAnnotations"><span data-bind="text: annotationsOn"></span></a>
 </div>
+-->
 
 </div><!-- /row -->
 

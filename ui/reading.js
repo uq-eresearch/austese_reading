@@ -112,6 +112,12 @@ function Artefact(data) {
         }
         return defers;
     }
+    self.sortFacsimiles = function () {
+        self.artefacts.sort(function(left, right) {
+            return left.filename() == right.filename() ? 0 : (left.filename() < right.filename() ? -1 : 1);
+        });
+        return artefact;
+    });
 
     self.displayFacsimile = function(facsimile) {
         location.hash = '/facsimile/' + facsimile.id();
@@ -207,6 +213,23 @@ function WorkModel(workId) {
         });
         return transcriptions;
     }
+
+    self.enableAnnotations = function() {
+        enableAnnotationsOnElement($('#readingdisplay')[0]);
+
+    }
+    self.disableAnnotations = function() {
+        $('#readingdisplay').removeAnnotator();
+        $('#readingdisplay')[0].annotationsEnabled = false;
+    }
+
+    self.annotationsOn.subscribe(function (annotationsEnabled) {
+        if (annotationsEnabled) {
+            self.enableAnnotations();
+        } else {
+            self.disableAnnotations();
+        }
+    });
 
 
     var queue = $({});
@@ -345,15 +368,13 @@ function WorkModel(workId) {
 
                 this.bind('beforeDocLoaded', function() {
                     console.log('beforeDocLoaded');
-                    $('#readingdisplay').removeAnnotator();
-                    $('#readingdisplay')[0].annotationsEnabled = false;
                     $('#readingdisplay').removeData("id");
+                    self.disableAnnotations();
 
                 });
                 this.bind('docLoaded', function() {
                     console.log('docLoaded');
-                    enableAnnotationsOnElement($('#readingdisplay')[0]);
-
+                    self.enableAnnotations();
                 });
 
                 // Do nothing when first loading
