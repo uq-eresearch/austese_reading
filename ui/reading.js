@@ -4,7 +4,7 @@ var $ = jQuery;
 var baseUrl = '/sites/all/modules/austese_repository/api/';
 
 // Utility functions
-getById = function(collection, id, fieldname) {
+function getById(collection, id, fieldname) {
     if (!fieldname) fieldname = 'id';
     var contents = collection();
     for (var i = 0; i < contents.length; i++) {
@@ -22,7 +22,7 @@ function getVersionByTranscriptionId(versions, id) {
         var transcriptions = version.transcriptions();
         for (var j = 0; j < transcriptions.length; j++) {
             var transcription = transcriptions[j];
-            if (transcription.id() == id) {
+            if (transcription.id() === id) {
                 return [version, transcription];
             }
         }
@@ -34,12 +34,12 @@ function getVersionByFacsimileId(versions, objId, fieldname) {
     var versions = versions();
     for (var i = 0; i < versions.length; i++) {
         var version = versions[i];
-        var artefacts = version.artefacts()
+        var artefacts = version.artefacts();
         for (var j = 0; j < artefacts.length; j++) {
             var artefact = artefacts[j];
             for (var k = 0; k < artefact[fieldname]().length; k++) {
                 var obj = artefact[fieldname]()[k];
-                if (obj.id() == objId) {
+                if (obj.id() === objId) {
                     return version;
                 }
             }
@@ -59,11 +59,11 @@ function MVD(data) {
 
     this.displayTable = function() {
         location.hash = '/table/' + self.name();
-    }
+    };
 
     this.displayCompare = function() {
         location.hash = '/compare/' + self.name();
-    }
+    };
 
 }
 
@@ -78,13 +78,13 @@ function DigitalResource(data) {  // Resource
      });
     this.dataUrl = ko.computed(function() {
         return window.location.origin + "/repository/resources/" + self.id() + "/content";
-    })
+    });
 
     self.transcriptionContents = null;
 
     self.displayTranscription = function() {
         location.hash = '/transcription/' + self.id();
-    }
+    };
 }
 
 function Artefact(data) {
@@ -107,24 +107,24 @@ function Artefact(data) {
                     dataType: "json",
                     headers: {'Accept': 'application/json'}
                 }).then(function(result){
-                    var digitalResource = new DigitalResource(result)
+                    var digitalResource = new DigitalResource(result);
                     self.facsimiles.push(digitalResource);
                     return digitalResource;
                 })
             );
         }
         return defers;
-    }
+    };
     self.sortFacsimiles = function () {
         self.artefacts.sort(function(left, right) {
-            return left.filename() == right.filename() ? 0 : (left.filename() < right.filename() ? -1 : 1);
+            return left.filename() === right.filename() ? 0 : (left.filename() < right.filename() ? -1 : 1);
         });
         return artefact;
     };
 
     self.displayFacsimile = function(facsimile) {
         location.hash = '/facsimile/' + facsimile.id();
-    }
+    };
 }
 
 function Version(data) {
@@ -152,14 +152,14 @@ function Version(data) {
                     dataType: "json",
                     headers: {'Accept': 'application/json'}
                 }).then(function(result){
-                    var transcription = new DigitalResource(result)
+                    var transcription = new DigitalResource(result);
                     self.transcriptions.push(transcription);
                     return transcription;
                 })
             );
         }
         return $.when.apply($, defers);
-    }
+    };
 
     // Load Artefacts
     this.loadArtefacts = function() {
@@ -180,7 +180,7 @@ function Version(data) {
         }
 
         return $.when.apply($, defers);
-    }
+    };
 }
 var app = null;
 function WorkModel(workId) {
@@ -192,6 +192,7 @@ function WorkModel(workId) {
     self.updated = ko.observable();
     self.versions =  ko.observableArray([]);
     self.mvds = ko.observableArray([]);
+    self.readingVersion = ko.observable();
 
     // Local page state
     self.activeVersion = ko.observable();
@@ -203,28 +204,30 @@ function WorkModel(workId) {
     self.toggleAnnotations = function() {
         var state = self.annotationsOn();
         self.annotationsOn(!state);
-    }
+    };
     self.selectVersion = function(version) {
         location.hash = '/version/' + version.id();
-    }
+    };
     self.getTranscriptions = function() {
         var transcriptions = [];
         $.each(workModel.versions(), function() {
             $.each(this.transcriptions(), function() {
                 transcriptions.push(this);
-            })
+            });
         });
         return transcriptions;
-    }
+    };
 
     self.enableAnnotations = function() {
-        enableAnnotationsOnElement($('#readingdisplay')[0]);
+        if (self.annotationsOn()) {
+            enableAnnotationsOnElement($('#readingdisplay')[0]);
+        }
+    };
 
-    }
     self.disableAnnotations = function() {
         $('#readingdisplay').removeAnnotator();
         $('#readingdisplay')[0].annotationsEnabled = false;
-    }
+    };
 
     self.annotationsOn.subscribe(function (annotationsEnabled) {
         if (annotationsEnabled) {
@@ -242,6 +245,7 @@ function WorkModel(workId) {
         self.workTitle(workData.workTitle);
         self.name(workData.name);
         self.updated(workData.updated);
+        self.readingVersion(workData.readingVersion);
 
         var versionLoadResponses = [];
         for (var i = 0; i < workData.versions.length; i++) {
@@ -264,7 +268,7 @@ function WorkModel(workId) {
                         else if ($.isArray(artefact)) {
                             $.each(artefact, function() {
                                 this.loadFacsimiles();
-                            })
+                            });
                         }
                     }
                     return null;
@@ -298,7 +302,7 @@ function WorkModel(workId) {
             // Client-side routes
             app = $.sammy(function() {
                 this.get('#/version/:version', function() {
-                    var version = getById(self.versions, this.params.version);
+                    var version = getById(self.versions(), this.params.version);
                     self.activeVersion(version);
 
                     version.transcriptions()[0].displayTranscription();
@@ -387,18 +391,19 @@ function WorkModel(workId) {
                 });
 
                 // Do nothing when first loading
-                this.get("", function() {});
+                this.get("", function() {
+                    var version = getById(self.versions, self.readingVersion(), 'id');
+                    self.activeVersion(version);
+
+                    version.transcriptions()[0].displayTranscription();
+                });
 
 
             });
             app.run();
         });
     });
-
-
-
-
-}
+} // finish WorkModel
 
 
 var workModel;

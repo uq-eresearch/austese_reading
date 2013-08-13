@@ -57,11 +57,10 @@ $workId = arg(1);
     </li>
 </ul>
 </div><!-- /span6 -->
-<!-- Enabling/disabling annotations needs more work yet
+
 <div class="span2">
     Annotations: <a href="#" data-bind="click: toggleAnnotations"><span data-bind="text: annotationsOn"></span></a>
 </div>
--->
 
 </div><!-- /row -->
 
