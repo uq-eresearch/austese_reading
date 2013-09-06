@@ -219,7 +219,7 @@ function WorkModel(workId) {
     };
 
     self.enableAnnotations = function() {
-        if (self.annotationsOn()) {
+        if (self.annotationsOn() && typeof enableAnnotationsOnElement == 'function') {
             enableAnnotationsOnElement($('#readingdisplay')[0]);
         }
     };
@@ -301,11 +301,15 @@ function WorkModel(workId) {
 
             // Client-side routes
             app = $.sammy(function() {
+                
                 this.get('#/version/:version', function() {
-                    var version = getById(self.versions(), this.params.version);
+                    var version = getById(self.versions, this.params.version);
                     self.activeVersion(version);
-
-                    version.transcriptions()[0].displayTranscription();
+                    var transcriptions = version.transcriptions();
+                    if (transcriptions.length > 0){
+                        transcriptions[0].displayTranscription();
+                    }
+                    
                 });
 
                 this.get(/\#\/table\/(.*)/, function() {
@@ -395,7 +399,10 @@ function WorkModel(workId) {
                     var version = getById(self.versions, self.readingVersion(), 'id');
                     self.activeVersion(version);
 
-                    version.transcriptions()[0].displayTranscription();
+                    var transcriptions = version.transcriptions();
+                    if (transcriptions.length > 0){
+                        transcriptions[0].displayTranscription();                      
+                    }
                 });
 
 
