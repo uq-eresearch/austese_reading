@@ -127,8 +127,9 @@ function Artefact(data) {
     };
 }
 
-function Version(data) {
+function Version(data, work) {
     var self = this;
+    this.work = ko.observable(work);
     this.id = ko.observable(data.id);
     this.versionTitle = ko.observable(data.versionTitle);
     this.description = ko.observable(data.description);
@@ -193,7 +194,10 @@ function WorkModel(workId) {
     self.versions =  ko.observableArray([]);
     self.mvds = ko.observableArray([]);
     self.readingVersion = ko.observable();
-
+    self.versionCount = ko.computed(function() {return self.versions().length;});
+    self.selectedVersion = ko.observable(self.readingVersion());
+    self.selectedMvd = ko.observable();
+    
     // Local page state
     self.activeVersion = ko.observable();
     self.annotationsOn = ko.observable();
@@ -205,8 +209,8 @@ function WorkModel(workId) {
         var state = self.annotationsOn();
         self.annotationsOn(!state);
     };
-    self.selectVersion = function(version) {
-        location.hash = '/version/' + version.id();
+    self.selectVersion = function(work) {
+        location.hash = '/version/' + work.selectedVersion();
     };
     self.getTranscriptions = function() {
         var transcriptions = [];
@@ -252,14 +256,14 @@ function WorkModel(workId) {
             var versionUrl = baseUrl + 'versions/' + workData.versions[i];
             versionLoadResponses.push(
                 jQuery.getJSON(versionUrl).then(function(versionData) {
-                    var version = new Version(versionData);
+                    var version = new Version(versionData,self);
                     self.versions.push(version);
                     return version;
                 }).then(function (version) {
                     return $.when(version.loadTranscriptions(), version.loadArtefacts());
                 }).then(function (transcription, artefact) {
                     if (transcription) {
-                        console.log('Transcription', transcription);
+                        //console.log('Transcription', transcription);
                     }
                     if (artefact) {
                         console.log('Artefact', artefact);
@@ -297,7 +301,6 @@ function WorkModel(workId) {
             });
             return $.when.apply($, defers);
         }).done(function allVersionsLoaded() {
-            console.log('all versions loaded');
 
             // Client-side routes
             app = $.sammy(function() {
@@ -338,7 +341,7 @@ function WorkModel(workId) {
                 this.get('#/facsimile/:facsimileId', function() {
                     var facsimileId = this.params.facsimileId;
                     var imageUrl = baseUrl + "resources/" + facsimileId;
-                    var resourceBase = 'http://localhost/repository/resources/';
+                    var resourceBase = baseUrl + '/repository/resources/';
                     var dataId = resourceBase + facsimileId + '/content';
 
                     this.trigger('beforeDocLoaded');
@@ -384,27 +387,13 @@ function WorkModel(workId) {
                 });
 
                 this.bind('beforeDocLoaded', function() {
-                    console.log('beforeDocLoaded');
                     $('#readingdisplay').removeData("id");
                     self.disableAnnotations();
 
                 });
                 this.bind('docLoaded', function() {
-                    console.log('docLoaded');
                     self.enableAnnotations();
                 });
-
-                // Do nothing when first loading
-                this.get("", function() {
-                    var version = getById(self.versions, self.readingVersion(), 'id');
-                    self.activeVersion(version);
-
-                    var transcriptions = version.transcriptions();
-                    if (transcriptions.length > 0){
-                        transcriptions[0].displayTranscription();                      
-                    }
-                });
-
 
             });
             app.run();

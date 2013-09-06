@@ -59,7 +59,7 @@ function reading_menu() {
 function reading_view() {
   $breadcrumb = array();
   $breadcrumb[] = l('Home', '<front>');
-  $breadcrumb[] = l('Reading Tool', 'reading');
+  $breadcrumb[] = t('Reading Interface');
   // $breadcrumb[] = t(drupal_get_title());
   drupal_set_breadcrumb($breadcrumb);
   $modulePath = drupal_get_path('module', 'reading');
