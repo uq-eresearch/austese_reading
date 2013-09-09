@@ -1,8 +1,7 @@
 
-var $ = jQuery;
+(function($){
 
-var baseUrl = '/sites/all/modules/austese_repository/api/';
-
+var baseUrl = jQuery('#metadata').data('baseurl');
 // Utility functions
 function getById(collection, id, fieldname) {
     if (!fieldname) fieldname = 'id';
@@ -408,3 +407,4 @@ jQuery(document).ready(function(){
     workModel = new WorkModel(workId);
     ko.applyBindings(workModel);
 });
+}(jQuery))

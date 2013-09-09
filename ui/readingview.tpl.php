@@ -1,10 +1,15 @@
 <?php
 $repModulePath = drupal_get_path('module', 'repository');
 $workId = arg(1);
+$baseUrl = 'http://'. $_SERVER['SERVER_NAME'] . '/' . $repModulePath . '/api/';
 ?>
 <div id="alerts"></div>
 
-<div id="metadata" data-workid="<?php print $workId; ?>"></div>
+<div id="metadata"
+ data-baseurl="<?php print $baseUrl; ?>" 
+ data-workid="<?php print $workId; ?>">
+</div>
+
 <a href="/repository/works/<?php print $workId; ?>"><h1 data-bind="text: workTitle"></h1></a>
 
 <div class="row-fluid">
