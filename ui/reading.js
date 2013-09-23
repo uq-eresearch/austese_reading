@@ -18,7 +18,7 @@ function getVersionByTranscriptionId(versions, id) {
     var versions = versions();
     for (var i = 0; i < versions.length; i++) {
         var version = versions[i];
-        var transcriptions = version.transcriptions();
+        var transcriptions = version.allTranscriptions();
         for (var j = 0; j < transcriptions.length; j++) {
             var transcription = transcriptions[j];
             if (transcription.id() === id) {
@@ -132,13 +132,36 @@ function Version(data, work) {
     this.work = ko.observable(work);
     this.id = ko.observable(data.id);
     this.versionTitle = ko.observable(data.versionTitle);
+    this.name = ko.observable(data.name);
     this.description = ko.observable(data.description);
     this.publisher = ko.observable(data.publisher);
     this.date = ko.observable(data.date);
     this.artefacts = ko.observableArray([]);
+    this.versions = ko.observableArray([]);
     this.transcriptions = ko.observableArray([]);
+   
+    this.allTranscriptions = ko.computed(function(){
+        var transcriptions = [];
+        
+        $.each(self.versions(), function() {
+            $.each(this.allTranscriptions(), function() {
+                transcriptions.push(this);
+            });
+        });
+        $.each(self.transcriptions(), function(){
+            transcriptions.push(this);
+        })
+        
+        //console.log("get all transcriptions for " + self.name() ,self.versions(), transcriptions)
+        return transcriptions;
+    });
+    this.uri = ko.computed(function(){
+        return '/repository/versions/' + self.id();
+    });
     this.displayName = ko.computed(function() {
-        return self.versionTitle() + " " + self.publisher() + " " + self.date();
+        return self.versionTitle() +
+        (self.name()? " (" + self.name() + ")" : "" )
+        + " " + self.publisher() + " " + self.date();
     });
 
 
@@ -215,7 +238,7 @@ function WorkModel(workId) {
     self.getTranscriptions = function() {
         var transcriptions = [];
         $.each(workModel.versions(), function() {
-            $.each(this.transcriptions(), function() {
+            $.each(this.allTranscriptions(), function() {
                 transcriptions.push(this);
             });
         });
@@ -266,7 +289,6 @@ function WorkModel(workId) {
                         //console.log('Transcription', transcription);
                     }
                     if (artefact) {
-                        console.log('Artefact', artefact);
                         if (artefact.loadFacsimiles)
                             artefact.loadFacsimiles();
                         else if ($.isArray(artefact)) {
@@ -285,17 +307,20 @@ function WorkModel(workId) {
                 transcriptions = workModel.getTranscriptions();
             $.each(transcriptions, function() {
                 defers.push( 
+                   
                     jQuery.ajax({
                         type: 'GET',
-                        url: baseUrl + 'mvds/?q=' + this.id(),
+                        url: baseUrl + 'mvds/?query=' + this.id(),
                         dataType: "json",
                         headers: {'Accept': 'application/json'}
                     }).then(function(mvdData) {
-                        $.each(mvdData.results, function() {
-                            if (getById(workModel.mvds, this.id) == null) {
-                                workModel.mvds.push(new MVD(this));
-                            }
-                        });
+                        if (mvdData){
+                            $.each(mvdData.results, function() {
+                                if (getById(workModel.mvds, this.id) == null) {
+                                    workModel.mvds.push(new MVD(this));
+                                }
+                            });
+                        }
                     })
                     );
             });
@@ -308,7 +333,7 @@ function WorkModel(workId) {
                 this.get('#/version/:version', function() {
                     var version = getById(self.versions, this.params.version);
                     self.activeVersion(version);
-                    var transcriptions = version.transcriptions();
+                    var transcriptions = version.allTranscriptions();
                     if (transcriptions.length > 0){
                         transcriptions[0].displayTranscription();
                     }
@@ -369,9 +394,17 @@ function WorkModel(workId) {
                     if (!transcription.transcriptionContents) {
                         jQuery.get(transcription.rawContentUrl(), function(data) {
                             transcription.transcriptionContents = data;
-
-                            $('#readingdisplay').data('id', transcription.dataUrl());
-                            jQuery('#readingdisplay').html(data);
+                            
+                            var tocPane = $('<div class="span3"></div>').html("Table of Contents");
+                            //span9
+                            var contentPane = $('<div class=" well white-well"></div>');
+                            
+                            contentPane.data('id', transcription.dataUrl());
+                            contentPane.html(data);
+                            var rowDiv = $('<div class="row-fluid"></div>');
+                            $('#readingdisplay').html(rowDiv);
+                            //rowDiv.append(tocPane);
+                            rowDiv.append(contentPane);
                             app.trigger('docLoaded');
 
                         });
