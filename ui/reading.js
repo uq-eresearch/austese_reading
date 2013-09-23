@@ -91,7 +91,8 @@ function Artefact(data) {
     this.facsimiles = ko.observableArray([]);
     this.id = ko.observable(data.id);
     this.uri = ko.observable(data.uri);
-
+    this.source = ko.observable(data.source);
+    
     // Load Facsimile Details
     self.loadFacsimiles = function() {
         var defers = [];
