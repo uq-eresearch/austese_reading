@@ -59,6 +59,12 @@ function reading_menu() {
 function reading_view() {
   $breadcrumb = array();
   $breadcrumb[] = l('Home', '<front>');
+  $projectParam = _get_projectParam();
+  if (isset($_GET['project'])) {
+      $project = node_load($_GET['project']);
+      $breadcrumb[] = l($project->title, 'node/' . $project->nid, $projectParam);
+  } 
+  $breadcrumb[] = l('Works','repository/works', $projectParam);
   $breadcrumb[] = t('Reading Interface');
   // $breadcrumb[] = t(drupal_get_title());
   drupal_set_breadcrumb($breadcrumb);
