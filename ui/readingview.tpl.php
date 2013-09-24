@@ -2,15 +2,22 @@
 $repModulePath = drupal_get_path('module', 'repository');
 $workId = arg(1);
 $baseUrl = 'http://'. $_SERVER['SERVER_NAME'] . '/' . $repModulePath . '/api/';
+$moduleUrl = 'http://' . $_SERVER['SERVER_NAME'] . '/' . drupal_get_path('module','reading');
+$project = null;
+if (isset($_GET['project'])) {
+ $project = $_GET['project'];
+}
 ?>
 <div id="alerts"></div>
 
 <div id="metadata"
  data-baseurl="<?php print $baseUrl; ?>" 
+ data-moduleurl="<?php print $moduleUrl; ?>"
+ data-repmoduleurl="<?php print $repModulePath;?>"
  data-workid="<?php print $workId; ?>">
 </div>
 
-<a href="/repository/works/<?php print $workId; ?>"><h1 data-bind="text: workTitle"></h1></a>
+<a href="/repository/works/<?php print $workId; ?><?php if ($project): print '?project='.$project; endif; ?>"><h1 data-bind="text: workTitle"></h1></a>
 
 <div class="row-fluid">
 <!--  toolbar -->
