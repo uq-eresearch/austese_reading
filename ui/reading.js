@@ -237,7 +237,6 @@ function Version(data, work) {
     };
 }
 var app = null;
-getXSL();
 function WorkModel(workId) {
     var self = this;
     // Data Fields from DB
@@ -448,10 +447,9 @@ function WorkModel(workId) {
                                            }
                                        } else {
                                            // TODO add transcription parts to toc
-                                           result = "<div class='span9 well white-well transcript'><pre>" + xml + "</pre></div>";
+                                           result = "<div data-id='" + transcription.dataUrl() + "' class='span9 well white-well transcript'><pre>" + xml + "</pre></div>";
                                        }
                                        $('#readingdisplay').html(result);
-                                       //$('#readingdisplay').data('id', transcription.dataUrl());
                                    } catch (e){
                                        console.log(e)
                                    }
@@ -462,7 +460,6 @@ function WorkModel(workId) {
                         //});
                     } else {
                         console.log(transcription.transcriptionContents);
-                        $('#readingdisplay').data('id', transcription.dataUrl());
                         $('#readingdisplay').html(transcription.transcriptionContents);
                         app.trigger('docLoaded');
                     }
@@ -473,9 +470,7 @@ function WorkModel(workId) {
                 });
 
                 this.bind('beforeDocLoaded', function() {
-                    $('#readingdisplay').removeData("id");
                     self.disableAnnotations();
-
                 });
                 this.bind('docLoaded', function() {
                     self.enableAnnotations();
@@ -490,6 +485,7 @@ function WorkModel(workId) {
 
 var workModel;
 jQuery(document).ready(function(){
+    getXSL();
     var workId = jQuery('#metadata').data('workid');
     workModel = new WorkModel(workId);
     ko.applyBindings(workModel);
