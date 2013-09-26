@@ -473,6 +473,14 @@ function WorkModel(workId) {
                     self.disableAnnotations();
                 });
                 this.bind('docLoaded', function() {
+                    $('.toclink').on('click',function(){
+                        //console.log("go to " + $(this).data('target'))
+                        var target = $('#' + $(this).data('target'));
+                        var container = $('#readingdisplay');
+                        container.animate({
+                            scrollTop: target.offset().top - container.offset().top + container.scrollTop()
+                        })
+                    })
                     self.enableAnnotations();
                 });
 
