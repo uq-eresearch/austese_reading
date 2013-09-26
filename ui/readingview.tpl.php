@@ -64,7 +64,10 @@ if (isset($_GET['project'])) {
     <ul data-bind="foreach: transcriptions">
         <li>
             <a href="#" data-bind="click: displayTranscription">
-                <span data-bind="text: filename"></span>
+                Display <span data-bind="text: displayTitle"></span>
+            </a>
+             <a data-bind="attr: {href: recordUrl, title: displayTitle}">
+                (View record)
             </a>
         </li>
     </ul>

@@ -2,6 +2,9 @@
 (function($){
 
 var baseUrl = jQuery('#metadata').data('baseurl');
+var moduleUrl = jQuery('#metadata').data('moduleurl');
+var repModuleUrl = jQuery('#metadata').data('repmoduleurl');
+var xslproc, xslproc2, xslie, xsl2ie;
 // Utility functions
 function getById(collection, id, fieldname) {
     if (!fieldname) fieldname = 'id';
@@ -13,7 +16,20 @@ function getById(collection, id, fieldname) {
     }
     return null;
 }
-
+function getXSL(){
+    jQuery.ajax({
+        url: moduleUrl + '/ui/xslt/toc.xsl',
+        success: function(xsl){
+            if (window.ActiveXObject) { // IE
+                xslie = xsl;
+            } else if (document.implementation && document.implementation.createDocument){
+                xslproc=new XSLTProcessor();
+                xslproc.importStylesheet(xsl);
+            }
+        }
+    });
+    
+}
 function getVersionByTranscriptionId(versions, id) {
     var versions = versions();
     for (var i = 0; i < versions.length; i++) {
@@ -72,13 +88,27 @@ function DigitalResource(data) {  // Resource
     this.filename = ko.observable(data.filename);
     this.id = ko.observable(data.id);
     this.uri = ko.observable(data.uri);
+    this.filetype = ko.observable(data.metadata.filetype);
+    this.title = ko.observable(data.metadata.title);
+    this.contentUrl = ko.computed(function(){
+        return baseUrl + 'resources/' + self.id()
+    });
+    this.recordUrl = ko.computed(function(){
+        return "/repository/resources/" + self.id();
+    });
     this.rawContentUrl = ko.computed(function() {
          return "/repository/resources/" + self.id() + "/content/raw"; 
      });
     this.dataUrl = ko.computed(function() {
         return window.location.origin + "/repository/resources/" + self.id() + "/content";
     });
-
+    this.displayTitle = ko.computed(function(){
+        if (self.title()){
+            return self.title();
+        } else {
+            return self.filename();
+        }
+    });
     self.transcriptionContents = null;
 
     self.displayTranscription = function() {
@@ -207,6 +237,7 @@ function Version(data, work) {
     };
 }
 var app = null;
+getXSL();
 function WorkModel(workId) {
     var self = this;
     // Data Fields from DB
@@ -247,13 +278,13 @@ function WorkModel(workId) {
 
     self.enableAnnotations = function() {
         if (self.annotationsOn() && typeof enableAnnotationsOnElement == 'function') {
-            enableAnnotationsOnElement($('#readingdisplay')[0]);
+            enableAnnotationsOnElement($('#readingdisplay').find('[data-id]'));
         }
     };
 
     self.disableAnnotations = function() {
-        $('#readingdisplay').removeAnnotator();
-        $('#readingdisplay')[0].annotationsEnabled = false;
+        $('#readingdisplay').find('[data-id]').removeAnnotator();
+        $('#readingdisplay').find('[data-id]').annotationsEnabled = false;
     };
 
     self.annotationsOn.subscribe(function (annotationsEnabled) {
@@ -392,23 +423,45 @@ function WorkModel(workId) {
                     this.trigger('beforeDocLoaded');
                     $('#readingdisplay').html('<b>Loading transcription...');
                     if (!transcription.transcriptionContents) {
-                        jQuery.get(transcription.rawContentUrl(), function(data) {
-                            transcription.transcriptionContents = data;
-                            
-                            var tocPane = $('<div class="span3"></div>').html("Table of Contents");
-                            //span9
-                            var contentPane = $('<div class=" well white-well"></div>');
-                            
-                            contentPane.data('id', transcription.dataUrl());
-                            contentPane.html(data);
-                            var rowDiv = $('<div class="row-fluid"></div>');
-                            $('#readingdisplay').html(rowDiv);
-                            //rowDiv.append(tocPane);
-                            rowDiv.append(contentPane);
-                            app.trigger('docLoaded');
-
-                        });
+                            // generate table of contents
+                            // get master list of all versions and parts
+                           console.log("displaying transcription for " + transcription.filetype(), workModel, transcription)
+                           
+                           
+                            jQuery.ajax({
+                               url: transcription.contentUrl(),
+                               cache: false,
+                               headers: {
+                                       'Accept': 'application/xml,text/xml, text/plain;'
+                               },
+                               success: function(xml){
+                                   var result;
+                                   try{
+                                       if (transcription.filetype().match("xml")){
+                                           if (xslie){
+                                               result = xml.transformNode(xslie);
+                                           } else if (xslproc){
+                                               console.log("transforming",xml)
+                                               xslproc.setParameter(null, "transcriptionId", transcription.id());
+                                               xslproc.setParameter(null, "transcriptionUrl", transcription.dataUrl());
+                                               result = xslproc.transformToFragment(xml,document);
+                                           }
+                                       } else {
+                                           // TODO add transcription parts to toc
+                                           result = "<div class='span9 well white-well transcript'><pre>" + xml + "</pre></div>";
+                                       }
+                                       $('#readingdisplay').html(result);
+                                       //$('#readingdisplay').data('id', transcription.dataUrl());
+                                   } catch (e){
+                                       console.log(e)
+                                   }
+                                   transcription.transcriptionContents = $('readingdisplay').html();
+                                   app.trigger('docLoaded');
+                               }
+                             });
+                        //});
                     } else {
+                        console.log(transcription.transcriptionContents);
                         $('#readingdisplay').data('id', transcription.dataUrl());
                         $('#readingdisplay').html(transcription.transcriptionContents);
                         app.trigger('docLoaded');

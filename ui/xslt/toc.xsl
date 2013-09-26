@@ -4,7 +4,7 @@
     <xsl:output method="html" encoding="utf-8"/>
 
     <xsl:param name="transcriptionId"/>
-        
+    <xsl:param name="transcriptionUrl"/>
     <xsl:template match="/">
         <div class="row-fluid">
             <div class="span3">
@@ -13,9 +13,7 @@
                     <xsl:apply-templates select="//head" mode="toc"/>
                 </ul>
             </div>
-            <div class="span9 well white-well transcript">
-                    <xsl:apply-templates/>
-            </div>
+            <div data-id="{$transcriptionUrl}" class="span9 well white-well"><div class="transcript"><xsl:apply-templates/></div></div>
         </div>
     </xsl:template>
     
