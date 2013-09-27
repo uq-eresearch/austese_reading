@@ -1,7 +1,7 @@
 <?php
-$repModulePath = drupal_get_path('module', 'repository');
 $workId = arg(1);
-$baseUrl = 'http://'. $_SERVER['SERVER_NAME'] . '/' . $repModulePath . '/api/';
+$baseUrl = 'http://'. $_SERVER['SERVER_NAME'];
+$repApi = $baseUrl . '/' . drupal_get_path('module', 'repository') . '/api/';
 $moduleUrl = 'http://' . $_SERVER['SERVER_NAME'] . '/' . drupal_get_path('module','reading');
 $project = null;
 if (isset($_GET['project'])) {
@@ -13,7 +13,7 @@ if (isset($_GET['project'])) {
 <div id="metadata"
  data-baseurl="<?php print $baseUrl; ?>" 
  data-moduleurl="<?php print $moduleUrl; ?>"
- data-repmoduleurl="<?php print $repModulePath;?>"
+ data-repapipath="<?php print $repApi;?>"
  data-workid="<?php print $workId; ?>">
 </div>
 
@@ -52,9 +52,8 @@ if (isset($_GET['project'])) {
 
 </div><!-- /row -->
 
-<div class="row-fluid">
-    <div id="readingdisplay" class="well span12" style="height: 500px; overflow: auto; overflow-x: hidden;"></div>
-</div>
+    <div id="readingdisplay" class="well" style="height: 500px; overflow: auto;"></div>
+
 <div class="row-fluid">
 
 <div data-bind="with: activeVersion">
@@ -80,7 +79,10 @@ if (isset($_GET['project'])) {
             <ul data-bind="foreach: facsimiles">
                 <li>
                     <a href="#" data-bind="click: $parent.displayFacsimile">
-                        <span data-bind="text: filename"></span>
+                        Display <span data-bind="text: filename"></span>
+                    </a>
+                    <a data-bind="attr: {href: recordUrl, title: displayTitle}">
+                        (View record)
                     </a>
                 </li>
             </ul>

@@ -3,7 +3,7 @@
 
 var baseUrl = jQuery('#metadata').data('baseurl');
 var moduleUrl = jQuery('#metadata').data('moduleurl');
-var repModuleUrl = jQuery('#metadata').data('repmoduleurl');
+var repApi = jQuery('#metadata').data('repapipath');
 var xslproc, xslproc2, xslie, xsl2ie;
 // Utility functions
 function getById(collection, id, fieldname) {
@@ -91,16 +91,16 @@ function DigitalResource(data) {  // Resource
     this.filetype = ko.observable(data.metadata.filetype);
     this.title = ko.observable(data.metadata.title);
     this.contentUrl = ko.computed(function(){
-        return baseUrl + 'resources/' + self.id()
+        return repApi + 'resources/' + self.id()
     });
     this.recordUrl = ko.computed(function(){
-        return "/repository/resources/" + self.id();
+        return baseUrl + "/repository/resources/" + self.id();
     });
     this.rawContentUrl = ko.computed(function() {
-         return "/repository/resources/" + self.id() + "/content/raw"; 
+         return baseUrl + "/repository/resources/" + self.id() + "/content/raw"; 
      });
     this.dataUrl = ko.computed(function() {
-        return window.location.origin + "/repository/resources/" + self.id() + "/content";
+        return baseUrl +  "/repository/resources/" + self.id() + "/content";
     });
     this.displayTitle = ko.computed(function(){
         if (self.title()){
@@ -133,7 +133,7 @@ function Artefact(data) {
             defers.push(
                 jQuery.ajax({
                     type: 'GET',
-                    url: baseUrl + 'resources/' + data.facsimiles[i],
+                    url: repApi + 'resources/' + data.facsimiles[i],
                     dataType: "json",
                     headers: {'Accept': 'application/json'}
                 }).then(function(result){
@@ -186,7 +186,7 @@ function Version(data, work) {
         return transcriptions;
     });
     this.uri = ko.computed(function(){
-        return '/repository/versions/' + self.id();
+        return baseUrl + '/repository/versions/' + self.id();
     });
     this.displayName = ko.computed(function() {
         return self.versionTitle() +
@@ -202,7 +202,7 @@ function Version(data, work) {
             defers.push(
                 jQuery.ajax({
                     type: 'GET',
-                    url: baseUrl + 'resources/' + data.transcriptions[i],
+                    url: repApi + 'resources/' + data.transcriptions[i],
                     dataType: "json",
                     headers: {'Accept': 'application/json'}
                 }).then(function(result){
@@ -222,7 +222,7 @@ function Version(data, work) {
             defers.push(
                 jQuery.ajax({
                     type: 'GET',
-                    url: baseUrl + 'artefacts/' + data.artefacts[i],
+                    url: repApi + 'artefacts/' + data.artefacts[i],
                     dataType: "json",
                     headers: {'Accept': 'application/json'}
                 }).then(function(result){
@@ -277,7 +277,11 @@ function WorkModel(workId) {
 
     self.enableAnnotations = function() {
         if (self.annotationsOn() && typeof enableAnnotationsOnElement == 'function') {
-            enableAnnotationsOnElement($('#readingdisplay').find('[data-id]'));
+            $('#readingdisplay').waitForImages(function(){
+                $('#readingdisplay').find('[data-id]').each(function(i, el){
+                  enableAnnotationsOnElement($(el));
+                });
+            });
         }
     };
 
@@ -298,7 +302,7 @@ function WorkModel(workId) {
     var queue = $({});
 
     // Load initial state
-    jQuery.getJSON(baseUrl + 'works/' + self.workId, function(workData) {
+    jQuery.getJSON(repApi + 'works/' + self.workId, function(workData) {
         self.workTitle(workData.workTitle);
         self.name(workData.name);
         self.updated(workData.updated);
@@ -306,7 +310,7 @@ function WorkModel(workId) {
 
         var versionLoadResponses = [];
         for (var i = 0; i < workData.versions.length; i++) {
-            var versionUrl = baseUrl + 'versions/' + workData.versions[i];
+            var versionUrl = repApi + 'versions/' + workData.versions[i];
             versionLoadResponses.push(
                 jQuery.getJSON(versionUrl).then(function(versionData) {
                     var version = new Version(versionData,self);
@@ -340,7 +344,7 @@ function WorkModel(workId) {
                    
                     jQuery.ajax({
                         type: 'GET',
-                        url: baseUrl + 'mvds/?query=' + this.id(),
+                        url: repApi + 'mvds/?query=' + this.id(),
                         dataType: "json",
                         headers: {'Accept': 'application/json'}
                     }).then(function(mvdData) {
@@ -366,7 +370,11 @@ function WorkModel(workId) {
                     var transcriptions = version.allTranscriptions();
                     if (transcriptions.length > 0){
                         transcriptions[0].displayTranscription();
-                    }
+                    } else {
+                        this.trigger('beforeDocLoaded');
+                        $('#readingdisplay').empty();
+                        app.trigger('docLoaded');
+                    } 
                     
                 });
 
@@ -395,14 +403,15 @@ function WorkModel(workId) {
 
                 this.get('#/facsimile/:facsimileId', function() {
                     var facsimileId = this.params.facsimileId;
-                    var imageUrl = baseUrl + "resources/" + facsimileId;
+                    var imageUrl = repApi + "resources/" + facsimileId;
                     var resourceBase = baseUrl + '/repository/resources/';
                     var dataId = resourceBase + facsimileId + '/content';
 
                     this.trigger('beforeDocLoaded');
 
-                    $('#readingdisplay').data('id', dataId).attr('data-id', dataId);
-                    $('#readingdisplay').html($("<img>").attr("src", imageUrl));
+                    
+                    var imgDiv = $('<div data-id="' + dataId + '"></div>').html($("<img class='thumbnail'></img>").attr("src", imageUrl));
+                    $('#readingdisplay').html(imgDiv);
 
                     app.trigger('docLoaded');
                     
@@ -449,7 +458,18 @@ function WorkModel(workId) {
                                            // TODO add transcription parts to toc
                                            result = "<div data-id='" + transcription.dataUrl() + "' class='span9 well white-well transcript'><pre>" + xml + "</pre></div>";
                                        }
-                                       $('#readingdisplay').html(result);
+                                       $('#readingdisplay').html(result).promise().done(function(){
+                                            try{
+                                                // ensure table of contents remains visible
+                                                $('#readingdisplay').scroll(function(){
+                                                    $("#toc").css("marginTop", ($('#readingdisplay').scrollTop()) + "px");
+                                                });
+                                            } catch (e){
+                                                console.log("problem",e)
+                                            }
+                                          
+                                       });
+
                                    } catch (e){
                                        console.log(e)
                                    }

@@ -7,8 +7,8 @@
     <xsl:param name="transcriptionUrl"/>
     <xsl:template match="/">
         <div class="row-fluid">
-            <div class="span3">
-                <p>Contents</p>
+            <div style="height:520px;overflow:auto;padding-right:1em;" id="toc" class="span3">
+                
                 <ul>
                     <xsl:apply-templates select="//head" mode="toc"/>
                 </ul>
