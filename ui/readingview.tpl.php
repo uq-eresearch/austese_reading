@@ -36,7 +36,7 @@ if (isset($_GET['project'])) {
   </div>  
   <!-- /ko -->
   
-  <label class="pull-right checkbox">
+  <label class="annotationToggle pull-right checkbox">
     <input  data-bind="checked: annotationsOn" type="checkbox"> <a href="#" data-bind="click: toggleAnnotations">Annotations</a>
   </label>
 

@@ -286,7 +286,9 @@ function WorkModel(workId) {
     };
 
     self.disableAnnotations = function() {
-        $('#readingdisplay').find('[data-id]').removeAnnotator();
+        if (typeof $('#readingdisplay').find('[data-id]').removeAnnotator == 'function'){
+            $('#readingdisplay').find('[data-id]').removeAnnotator();
+        }
         $('#readingdisplay').find('[data-id]').annotationsEnabled = false;
     };
 
@@ -517,5 +519,8 @@ jQuery(document).ready(function(){
     var workId = jQuery('#metadata').data('workid');
     workModel = new WorkModel(workId);
     ko.applyBindings(workModel);
+    if (typeof enableAnnotationsOnElement != 'function'){
+        jQuery('.annotationToggle').hide();
+    }
 });
 }(jQuery))
