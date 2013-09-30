@@ -243,7 +243,7 @@
     </h2>
 </xsl:template>
 
-<xsl:template match="p">
+<xsl:template match="p | epigraph">
     <p>
         <xsl:attribute name="id">
             <xsl:choose>
