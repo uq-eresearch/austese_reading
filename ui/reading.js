@@ -387,8 +387,15 @@ function WorkModel(workId) {
 
                     this.trigger('beforeDocLoaded');
                     jQuery('#readingdisplay').html(
-                        '<iframe src="'+mvd.tableUrl()+'" width="100%" height="100%"/>'
+                        '<iframe id="mvdTable" src="'+mvd.tableUrl()+'" width="100%" height="100%"/>'
                     );
+                    $('#mvdTable').on("load",function(){
+                        // load in fullscreen mode
+                        var windowjQuery = $('#mvdTable')[0].contentWindow.jQuery;
+                        var m = $('#mvdTable').contents().find('#metadata');
+                        windowjQuery.data(m[0], 'fullscreen', true)
+                        
+                    });
                 });
 
 
@@ -399,8 +406,15 @@ function WorkModel(workId) {
 
                     this.trigger('beforeDocLoaded');
                     jQuery('#readingdisplay').html(
-                        '<iframe src="'+mvd.compareUrl()+'" width="100%" height="100%"/>'
+                        '<iframe id="mvdCompare" src="'+mvd.compareUrl()+'" width="100%" height="100%"/>'
                     );
+                    $('#mvdCompare').on("load",function(){
+                        // load in fullscreen mode
+                        var windowjQuery = $('#mvdCompare')[0].contentWindow.jQuery;
+                        var m = $('#mvdCompare').contents().find('#metadata');
+                        windowjQuery.data(m[0], 'fullscreen', true)
+                        
+                    });
                 });
 
                 this.get('#/facsimile/:facsimileId', function() {
