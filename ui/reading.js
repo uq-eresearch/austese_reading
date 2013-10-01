@@ -447,53 +447,52 @@ function WorkModel(workId) {
                     this.trigger('beforeDocLoaded');
                     $('#readingdisplay').html('<b>Loading transcription...');
                     if (!transcription.transcriptionContents) {
-                            // generate table of contents
-                            // get master list of all versions and parts
-                           console.log("displaying transcription for " + transcription.filetype(), workModel, transcription)
-                           
-                           
-                            jQuery.ajax({
-                               url: transcription.contentUrl(),
-                               cache: false,
-                               headers: {
-                                       'Accept': 'application/xml,text/xml, text/plain;'
-                               },
-                               success: function(xml){
-                                   var result;
-                                   try{
-                                       if (transcription.filetype().match("xml")){
-                                           if (xslie){
-                                               result = xml.transformNode(xslie);
-                                           } else if (xslproc){
-                                               console.log("transforming",xml)
-                                               xslproc.setParameter(null, "transcriptionId", transcription.id());
-                                               xslproc.setParameter(null, "transcriptionUrl", transcription.dataUrl());
-                                               result = xslproc.transformToFragment(xml,document);
-                                           }
-                                       } else {
-                                           // TODO add transcription parts to toc
-                                           result = "<div data-id='" + transcription.dataUrl() + "' class='span9 well white-well transcript'><pre>" + xml + "</pre></div>";
+                        // generate table of contents
+                        // get master list of all versions and parts
+                       console.log("displaying transcription for " + transcription.filetype(), workModel, transcription)
+                       
+                       
+                        jQuery.ajax({
+                           url: transcription.contentUrl(),
+                           cache: false,
+                           headers: {
+                                   'Accept': 'application/xml,text/xml, text/plain;'
+                           },
+                           success: function(xml){
+                               var result;
+                               try{
+                                   if (transcription.filetype().match("xml")){
+                                       if (xslie){
+                                           result = xml.transformNode(xslie);
+                                       } else if (xslproc){
+                                           console.log("transforming",xml)
+                                           xslproc.setParameter(null, "transcriptionId", transcription.id());
+                                           xslproc.setParameter(null, "transcriptionUrl", transcription.dataUrl());
+                                           result = xslproc.transformToFragment(xml,document);
                                        }
-                                       $('#readingdisplay').html(result).promise().done(function(){
-                                            try{
-                                                // ensure table of contents remains visible
-                                                $('#readingdisplay').scroll(function(){
-                                                    $("#toc").css("marginTop", ($('#readingdisplay').scrollTop()) + "px");
-                                                });
-                                            } catch (e){
-                                                console.log("problem",e)
-                                            }
-                                          
-                                       });
-
-                                   } catch (e){
-                                       console.log(e)
+                                   } else {
+                                       // TODO add transcription parts to toc
+                                       result = "<div data-id='" + transcription.dataUrl() + "' class='span9 well white-well transcript'><pre>" + xml + "</pre></div>";
                                    }
-                                   transcription.transcriptionContents = $('readingdisplay').html();
-                                   app.trigger('docLoaded');
+                                   $('#readingdisplay').html(result).promise().done(function(){
+                                        try{
+                                            // ensure table of contents remains visible
+                                            $('#readingdisplay').scroll(function(){
+                                                $("#toc").css("marginTop", ($('#readingdisplay').scrollTop()) + "px");
+                                            });
+                                        } catch (e){
+                                            console.log("problem",e)
+                                        }
+                                      
+                                   });
+
+                               } catch (e){
+                                   console.log(e)
                                }
-                             });
-                        //});
+                               transcription.transcriptionContents = $('readingdisplay').html();
+                               app.trigger('docLoaded');
+                           }
+                         });
                     } else {
                         console.log(transcription.transcriptionContents);
                         $('#readingdisplay').html(transcription.transcriptionContents);
