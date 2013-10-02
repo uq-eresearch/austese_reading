@@ -152,4 +152,4 @@ if (isset($_GET['project'])) {
 </div>
 
 
-<ul data-bind="template: { name: 'versionDisplay', foreach: $data.versions }"></ul>
+<ul style="display:none;" data-bind="template: { name: 'versionDisplay', foreach: $data.versions }"></ul>
