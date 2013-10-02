@@ -118,6 +118,10 @@ function DigitalResource(data) {  // Resource
     });
     self.transcriptionContents = null;
 
+    this.transcriptionUrl = function() {
+        return '#/transcription/' + self.id();
+    }
+
     self.displayTranscription = function() {
         location.hash = '/transcription/' + self.id();
     };
@@ -508,8 +512,8 @@ function WorkModel(workId) {
                                    }
                                    $('#readingdisplay').html(result).promise().done(function(){
                                         try{
-                                            var versionmenu = $('[versionid="' + version.id() + '"]');
-                                            $('#readingdisplay .span3 ul').append(versionmenu);
+                                            var versionmenu = $('[versionid="' + version.id() + '"] ul').clone();
+                                            $('#readingdisplay .span3').append(versionmenu);
                                             // ensure table of contents remains visible
                                             $('#readingdisplay').scroll(function(){
                                                 $("#toc").css("marginTop", ($('#readingdisplay').scrollTop()) + "px");

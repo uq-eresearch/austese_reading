@@ -10,7 +10,8 @@ if (isset($_GET['project'])) {
 ?>
 <script id="versionDisplay" type="text/html">
     <!-- ko if: $data -->
-  <li data-bind="attr: { versionid: id }"><b> <span data-bind="text: displayName()" /></b>
+  <li data-bind="attr: { versionid: id }">
+  <b> <span data-bind="text: displayName()" /></b>
     <br>
 
     <div data-bind="foreach: artefacts">
@@ -19,10 +20,7 @@ if (isset($_GET['project'])) {
             <ul data-bind="foreach: facsimiles">
                 <li>
                     <a href="#" data-bind="click: $parent.displayFacsimile">
-                        Display <span data-bind="text: filename"></span>
-                    </a>
-                    <a data-bind="attr: {href: recordUrl, title: displayTitle}">
-                        (View record)
+                        <span data-bind="text: filename"></span>
                     </a>
                 </li>
             </ul>
@@ -31,11 +29,9 @@ if (isset($_GET['project'])) {
     <!-- ko if: $data.transcriptions && transcriptions().length > 0 -->
         <ul data-bind="foreach: transcriptions">
             <li>
-                <a href="#" data-bind="click: displayTranscription">
-                    Display <span data-bind="text: displayTitle"></span>
-                </a>
-                 <a data-bind="attr: {href: recordUrl, title: displayTitle}">
-                    (View record)
+                <!--<a href="#" data-bind="click: displayTranscription"> -->
+                <a href="#" data-bind="attr: { href: transcriptionUrl()}">
+                    <span data-bind="text: displayTitle"></span>
                 </a>
             </li>
         </ul>
@@ -57,7 +53,6 @@ if (isset($_GET['project'])) {
 
 <a href="/repository/works/<?php print $workId; ?><?php if ($project): print '?project='.$project; endif; ?>"><h1 data-bind="text: workTitle"></h1></a>
 
-<ul data-bind="template: { name: 'versionDisplay', foreach: $data.versions }"></ul>
 
 <div class="row-fluid">
 
@@ -155,3 +150,6 @@ if (isset($_GET['project'])) {
    </div>
 </div>
 </div>
+
+
+<ul data-bind="template: { name: 'versionDisplay', foreach: $data.versions }"></ul>
