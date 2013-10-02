@@ -20,39 +20,30 @@ if (isset($_GET['project'])) {
 <a href="/repository/works/<?php print $workId; ?><?php if ($project): print '?project='.$project; endif; ?>"><h1 data-bind="text: workTitle"></h1></a>
 
 <div class="row-fluid">
-<!--  toolbar -->
-<form class="well white-well form-inline">
- 
-  <b>Version: </b><select data-bind="value: selectedVersion, event:{ change: selectVersion},  options: versions, optionsText: function(i){var res='';if (i.work().readingVersion() && i.work().readingVersion() == i.id()){res='* ';}res+=i.displayName();return res;}, optionsValue: 'id'"></select>
-
-  <!-- ko if: mvds().length > 0 -->
-  &nbsp;&nbsp;<b>Compare: </b>
-  <select data-bind="options: mvds, optionsText: 'name', value: selectedMvd"></select>
-
-  <div style="display:inline" data-bind="with: selectedMvd">
-  <button data-bind="click: displayCompare" class="btn">Side By Side</button>
-  <button data-bind="click: displayTable" class="btn">Table</button>
-
-  </div>  
-  <!-- /ko -->
+  <!--  toolbar -->
+  <form class="well white-well form-inline">
+   
+    <b>Version: </b><select data-bind="value: selectedVersion, event:{ change: selectVersion},  options: versions, optionsText: function(i){var res='';if (i.work().readingVersion() && i.work().readingVersion() == i.id()){res='* ';}res+=i.displayName();return res;}, optionsValue: 'id'"></select>
   
-  <label class="annotationToggle pull-right checkbox">
-    <input  data-bind="checked: annotationsOn" type="checkbox"> <a href="#" data-bind="click: toggleAnnotations">Annotations</a>
-  </label>
-
-  </form>
+    <!-- ko if: mvds().length > 0 -->
+    &nbsp;&nbsp;<b>Compare: </b>
+    <select data-bind="options: mvds, optionsText: 'name', value: selectedMvd"></select>
+  
+    <div style="display:inline" data-bind="with: selectedMvd">
+     <button data-bind="click: displayCompare" class="btn">Side By Side</button>
+     <button data-bind="click: displayTable" class="btn">Table</button>
+  
+    </div>  
+    <!-- /ko -->
+    
+    <label class="annotationToggle pull-right checkbox">
+      <input  data-bind="checked: annotationsOn" type="checkbox"> <a href="#" data-bind="click: toggleAnnotations">Annotations</a>
+    </label>
+  
+    </form>
   
 </div>
-
-
-
-
-
-
-
-</div><!-- /row -->
-
-    <div id="readingdisplay" class="well" style="height: 500px; overflow: auto;"></div>
+<div id="readingdisplay" class="well" style="height: 500px; overflow: auto;"></div>
 
 <div class="row-fluid">
 
