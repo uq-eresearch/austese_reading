@@ -508,7 +508,8 @@ function WorkModel(workId) {
                                    }
                                    $('#readingdisplay').html(result).promise().done(function(){
                                         try{
-                                            $('#readingdisplay .span3').append(version.id());
+                                            var versionmenu = $('[versionid="' + version.id() + '"]');
+                                            $('#readingdisplay .span3 ul').append(versionmenu);
                                             // ensure table of contents remains visible
                                             $('#readingdisplay').scroll(function(){
                                                 $("#toc").css("marginTop", ($('#readingdisplay').scrollTop()) + "px");
