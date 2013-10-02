@@ -30,15 +30,22 @@ function getXSL(){
     });
     
 }
-function getVersionByTranscriptionId(versions, id) {
+function getVersionByTranscriptionId(versions, transcriptionId) {
     var versions = versions();
     for (var i = 0; i < versions.length; i++) {
         var version = versions[i];
         var transcriptions = version.allTranscriptions();
         for (var j = 0; j < transcriptions.length; j++) {
             var transcription = transcriptions[j];
-            if (transcription.id() === id) {
+            if (transcription.id() === transcriptionId) {
                 return [version, transcription];
+            }
+        }
+        if (version.versions().length > 0) {
+            var returnVal = getVersionByTranscriptionId(version.versions, transcriptionId);
+            if (returnVal) {
+                returnVal[0] = version;
+                return returnVal;
             }
         }
     }
@@ -169,14 +176,18 @@ function Version(data, work) {
     this.artefacts = ko.observableArray([]);
     this.versions = ko.observableArray([]);
     this.transcriptions = ko.observableArray([]);
+    var versionIds = data.versions || [];
+    this.versionIds = ko.observableArray(versionIds);
    
     this.allTranscriptions = ko.computed(function(){
         var transcriptions = [];
         
         $.each(self.versions(), function() {
-            $.each(this.allTranscriptions(), function() {
-                transcriptions.push(this);
-            });
+            if (this instanceof Version) {
+                $.each(this.allTranscriptions(), function() {
+                    transcriptions.push(this);
+                });
+            }
         });
         $.each(self.transcriptions(), function(){
             transcriptions.push(this);
@@ -235,6 +246,11 @@ function Version(data, work) {
 
         return $.when.apply($, defers);
     };
+}
+ko.observableArray.fn.setAt = function(index, value) {
+    this.valueWillMutate();
+    this()[index] = value;
+    this.valueHasMutated();
 }
 var app = null;
 function WorkModel(workId) {
@@ -300,8 +316,43 @@ function WorkModel(workId) {
         }
     });
 
-
-    var queue = $({});
+    versionCount = 0;
+    version2Count = 0;
+    function loadVersion(versionId, parent, index) {
+        var versionUrl = repApi + 'versions/' + versionId;
+        var loadedVersion;
+        var allDone = jQuery.getJSON(versionUrl).then(function(versionData) {
+            versionCount += 1;
+            loadedVersion = new Version(versionData, parent);
+            parent.versions.setAt(index, loadedVersion);
+            return loadedVersion;
+        }).then(function (version) {
+            return $.when(version.loadTranscriptions(), version.loadArtefacts());
+        }).then(function (transcription, artefact) {
+            if (transcription) {
+                //console.log('Transcription', transcription);
+            }
+            if (artefact) {
+                if (artefact.loadFacsimiles)
+                    artefact.loadFacsimiles();
+                else if ($.isArray(artefact)) {
+                    $.each(artefact, function() {
+                        this.loadFacsimiles();
+                    });
+                }
+            }
+            return null;
+        }).then(function () {
+            var added = [];
+            for (var i = 0; i < loadedVersion.versionIds().length; i++) {
+            version2Count += 1;
+                var newVer = loadVersion(loadedVersion.versionIds()[i], loadedVersion, i);
+                added.push(newVer);
+            }
+            return added;
+        });
+        return allDone;
+    }
 
     // Load initial state
     jQuery.getJSON(repApi + 'works/' + self.workId, function(workData) {
@@ -312,37 +363,17 @@ function WorkModel(workId) {
 
         var versionLoadResponses = [];
         for (var i = 0; i < workData.versions.length; i++) {
-            var versionUrl = repApi + 'versions/' + workData.versions[i];
-            versionLoadResponses.push(
-                jQuery.getJSON(versionUrl).then(function(versionData) {
-                    var version = new Version(versionData,self);
-                    self.versions.push(version);
-                    return version;
-                }).then(function (version) {
-                    return $.when(version.loadTranscriptions(), version.loadArtefacts());
-                }).then(function (transcription, artefact) {
-                    if (transcription) {
-                        //console.log('Transcription', transcription);
-                    }
-                    if (artefact) {
-                        if (artefact.loadFacsimiles)
-                            artefact.loadFacsimiles();
-                        else if ($.isArray(artefact)) {
-                            $.each(artefact, function() {
-                                this.loadFacsimiles();
-                            });
-                        }
-                    }
-                    return null;
-                })
-            );
+            versionLoadResponses.push(loadVersion(workData.versions[i], self, i));
         };
-        var defer = $.when.apply($, versionLoadResponses);
-        defer.then(function() {
-            var defers = [],
+        var whenAllVersionsLoaded = $.when.apply($, versionLoadResponses);
+
+        whenAllVersionsLoaded
+        // Load MVDs
+        .then(function loadMVDs() {
+            var mvdLoaded = [],
                 transcriptions = workModel.getTranscriptions();
             $.each(transcriptions, function() {
-                defers.push( 
+                mvdLoaded.push(
                    
                     jQuery.ajax({
                         type: 'GET',
@@ -358,10 +389,12 @@ function WorkModel(workId) {
                             });
                         }
                     })
-                    );
+                );
             });
-            return $.when.apply($, defers);
-        }).done(function allVersionsLoaded() {
+            return $.when.apply($, mvdLoaded);
+
+        // Setup all of the Sammy action routing
+        }).done(function everythingLoaded() {
 
             // Client-side routes
             app = $.sammy(function() {
@@ -449,8 +482,7 @@ function WorkModel(workId) {
                     if (!transcription.transcriptionContents) {
                         // generate table of contents
                         // get master list of all versions and parts
-                       console.log("displaying transcription for " + transcription.filetype(), workModel, transcription)
-                       
+                        console.log("displaying transcription for " + transcription.filetype(), workModel, transcription);
                        
                         jQuery.ajax({
                            url: transcription.contentUrl(),
@@ -476,10 +508,12 @@ function WorkModel(workId) {
                                    }
                                    $('#readingdisplay').html(result).promise().done(function(){
                                         try{
+                                            $('#readingdisplay .span3').append(version.id());
                                             // ensure table of contents remains visible
                                             $('#readingdisplay').scroll(function(){
                                                 $("#toc").css("marginTop", ($('#readingdisplay').scrollTop()) + "px");
                                             });
+
                                         } catch (e){
                                             console.log("problem",e)
                                         }
@@ -526,7 +560,7 @@ function WorkModel(workId) {
 } // finish WorkModel
 
 
-var workModel;
+// var workModel;
 jQuery(document).ready(function(){
     getXSL();
     var workId = jQuery('#metadata').data('workid');
