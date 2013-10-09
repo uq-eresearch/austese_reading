@@ -162,7 +162,9 @@ function Artefact(data) {
         });
         return artefact;
     };
-
+    self.facsimileUrl = function(id) {
+        return '#/facsimile/' + id;
+    }
     self.displayFacsimile = function(facsimile) {
         location.hash = '/facsimile/' + facsimile.id();
     };
@@ -208,6 +210,15 @@ function Version(data, work) {
         (self.name()? " (" + self.name() + ")" : "" )
         + " " + self.publisher() + " " + self.date();
     });
+
+    this.dropdownDisplayName = function() {
+        var res = '';
+        if (this.work() && this.work().readingVersion() && this.work().readingVersion() == this.id()) {
+          res = '* ';
+        }
+        res += this.displayName();
+        return res;
+    }
 
 
     // Load Transcriptions
@@ -320,13 +331,33 @@ function WorkModel(workId) {
         }
     });
 
-    versionCount = 0;
-    version2Count = 0;
+    // Load MVDs
+    function loadMVDs(transcriptionId) {
+        var mvdLoaded = [],
+            transcriptions = workModel.getTranscriptions();
+        // Clear current
+        workModel.mvds([]);
+
+        jQuery.ajax({
+            type: 'GET',
+            url: repApi + 'mvds/?query=' + transcriptionId,
+            dataType: "json",
+            headers: {'Accept': 'application/json'}
+        }).then(function(mvdData) {
+            if (mvdData){
+                $.each(mvdData.results, function() {
+                    if (getById(workModel.mvds, this.id) == null) {
+                        workModel.mvds.push(new MVD(this));
+                    }
+                });
+            }
+        })
+    }
+
     function loadVersion(versionId, parent, index) {
         var versionUrl = repApi + 'versions/' + versionId;
         var loadedVersion;
         var allDone = jQuery.getJSON(versionUrl).then(function(versionData) {
-            versionCount += 1;
             loadedVersion = new Version(versionData, parent);
             parent.versions.setAt(index, loadedVersion);
             return loadedVersion;
@@ -349,7 +380,6 @@ function WorkModel(workId) {
         }).then(function () {
             var added = [];
             for (var i = 0; i < loadedVersion.versionIds().length; i++) {
-            version2Count += 1;
                 var newVer = loadVersion(loadedVersion.versionIds()[i], loadedVersion, i);
                 added.push(newVer);
             }
@@ -369,36 +399,13 @@ function WorkModel(workId) {
         for (var i = 0; i < workData.versions.length; i++) {
             versionLoadResponses.push(loadVersion(workData.versions[i], self, i));
         };
+
+
+
         var whenAllVersionsLoaded = $.when.apply($, versionLoadResponses);
 
-        whenAllVersionsLoaded
-        // Load MVDs
-        .then(function loadMVDs() {
-            var mvdLoaded = [],
-                transcriptions = workModel.getTranscriptions();
-            $.each(transcriptions, function() {
-                mvdLoaded.push(
-                   
-                    jQuery.ajax({
-                        type: 'GET',
-                        url: repApi + 'mvds/?query=' + this.id(),
-                        dataType: "json",
-                        headers: {'Accept': 'application/json'}
-                    }).then(function(mvdData) {
-                        if (mvdData){
-                            $.each(mvdData.results, function() {
-                                if (getById(workModel.mvds, this.id) == null) {
-                                    workModel.mvds.push(new MVD(this));
-                                }
-                            });
-                        }
-                    })
-                );
-            });
-            return $.when.apply($, mvdLoaded);
-
-        // Setup all of the Sammy action routing
-        }).done(function everythingLoaded() {
+        whenAllVersionsLoaded.done(function everythingLoaded() {
+            // Setup all of the Sammy action routing
 
             // Client-side routes
             app = $.sammy(function() {
@@ -478,15 +485,21 @@ function WorkModel(workId) {
                 this.get('#/transcription/:transcriptionId', function() {
                     var transcriptionId = this.params.transcriptionId;
                     var results = getVersionByTranscriptionId(self.versions, transcriptionId);
-                    var version = results[0];
-                    var transcription = results[1];
+                    if (results && results.length > 0) {
+                        var version = results[0];
+                        var transcription = results[1];
+                    } else {
+                        console.log("ABORT ABORT: no such transcription yet");
+                        return;
+                    }
+
 
                     this.trigger('beforeDocLoaded');
                     $('#readingdisplay').html('<b>Loading transcription...');
                     if (!transcription.transcriptionContents) {
                         // generate table of contents
                         // get master list of all versions and parts
-                        console.log("displaying transcription for " + transcription.filetype(), workModel, transcription);
+                        // console.log("displaying transcription for " + transcription.filetype(), workModel, transcription);
                        
                         jQuery.ajax({
                            url: transcription.contentUrl(),
@@ -501,7 +514,7 @@ function WorkModel(workId) {
                                        if (xslie){
                                            result = xml.transformNode(xslie);
                                        } else if (xslproc){
-                                           console.log("transforming",xml)
+                                           // console.log("transforming",xml)
                                            xslproc.setParameter(null, "transcriptionId", transcription.id());
                                            xslproc.setParameter(null, "transcriptionUrl", transcription.dataUrl());
                                            result = xslproc.transformToFragment(xml,document);
@@ -512,7 +525,7 @@ function WorkModel(workId) {
                                    }
                                    $('#readingdisplay').html(result).promise().done(function(){
                                         try{
-                                            var versionmenu = $('[versionid="' + version.id() + '"] ul').clone();
+                                            var versionmenu = $('[versionid="' + version.id() + '"] > ul').clone();
                                             $('#readingdisplay .span3').append(versionmenu);
                                             // ensure table of contents remains visible
                                             $('#readingdisplay').scroll(function(){
@@ -541,6 +554,8 @@ function WorkModel(workId) {
                     if (!self.activeVersion()) {
                         self.activeVersion(version);
                     }
+
+                    loadMVDs(transcriptionId);
                 });
 
                 this.bind('beforeDocLoaded', function() {

@@ -9,29 +9,35 @@ if (isset($_GET['project'])) {
 }
 ?>
 <script id="versionDisplay" type="text/html">
-    <!-- ko if: $data -->
+  <!-- ko if: $data -->
   <li data-bind="attr: { versionid: id }">
-  <b> <span data-bind="text: displayName()" /></b>
-    <br>
+<?php /*   <span data-bind="text: displayName()" /> 
+    <br> */ ?>
 
-    <div data-bind="foreach: artefacts">
+<?php /*    <div data-bind="foreach: artefacts">
     <!-- ko if: facsimiles().length > 0 -->
             <b data-bind="text: source"></b><b> facsimiles:</b>
             <ul data-bind="foreach: facsimiles">
                 <li>
-                    <a href="#" data-bind="click: $parent.displayFacsimile">
+                    <a href="#" data-bind="attr: { href: $parent.facsimileUrl(id())}">
                         <span data-bind="text: filename"></span>
                     </a>
                 </li>
             </ul>
     <!-- /ko -->
-    </div>
-    <!-- ko if: $data.transcriptions && transcriptions().length > 0 -->
+    </div> */ ?>
+    <!-- ko if: $data.transcriptions && transcriptions().length == 1 -->
+      <!-- ko with: transcriptions()[0] -->
+          <a href="#" data-bind="attr: { href: transcriptionUrl()}">
+              <span data-bind=" text: $parent.displayName()"></span>
+          </a>
+      <!-- /ko -->
+    <!-- /ko -->
+    <!-- ko if: $data.transcriptions && transcriptions().length > 1 -->
         <ul data-bind="foreach: transcriptions">
             <li>
-                <!--<a href="#" data-bind="click: displayTranscription"> -->
                 <a href="#" data-bind="attr: { href: transcriptionUrl()}">
-                    <span data-bind="text: displayTitle"></span>
+                    <span data-bind="text: $parent.displayName()"></span>
                 </a>
             </li>
         </ul>
@@ -58,56 +64,38 @@ if (isset($_GET['project'])) {
 
 <!--  toolbar -->
 <form class="well white-well form-inline">
- 
+  &nbsp;&nbsp;<b>Compare: </b>
+  <select data-bind="blah: console.log($data.mvds), options: mvds, optionsText: 'name', value: selectedMvd"></select>
   <b>Version: </b>
   <!-- ko: if versions -->
   <select data-bind="
         value: selectedVersion,
         event: { change: selectVersion },
         options: versions,
-        optionsText: function(i) {
-            var res='';
-            if (!i) return '';
-            if (i.work().readingVersion() && i.work().readingVersion() == i.id()) {
-              res='* ';
-            }
-            res+=i.displayName();
-            return res;
+        optionsText: function(item) {
+          return item ? item.dropdownDisplayName() : '';
         },
         optionsValue: function(item) {
-          if (item) {
-            return item.id();
-          }
+            return item ? item.id() : '';
         }"></select>
   <!-- /ko -->
 
-  <!-- ko if: mvds().length > 0 -->
+
   &nbsp;&nbsp;<b>Compare: </b>
   <select data-bind="options: mvds, optionsText: 'name', value: selectedMvd"></select>
-
   <div style="display:inline" data-bind="with: selectedMvd">
   <button data-bind="click: displayCompare" class="btn">Side By Side</button>
   <button data-bind="click: displayTable" class="btn">Table</button>
+  <div data-bind="text: versions"></div>
 
-  </div>  
-  <!-- /ko -->
+  </div>
   
-    <!-- ko if: mvds().length > 0 -->
-    &nbsp;&nbsp;<b>Compare: </b>
-    <select data-bind="options: mvds, optionsText: 'name', value: selectedMvd"></select>
-  
-    <div style="display:inline" data-bind="with: selectedMvd">
-     <button data-bind="click: displayCompare" class="btn">Side By Side</button>
-     <button data-bind="click: displayTable" class="btn">Table</button>
-  
-    </div>  
-    <!-- /ko -->
     
-    <label class="annotationToggle pull-right checkbox">
-      <input  data-bind="checked: annotationsOn" type="checkbox"> <a href="#" data-bind="click: toggleAnnotations">Annotations</a>
-    </label>
-  
-    </form>
+  <label class="annotationToggle pull-right checkbox">
+    <input  data-bind="checked: annotationsOn" type="checkbox"> <a href="#" data-bind="click: toggleAnnotations">Annotations</a>
+  </label>
+ 
+  </form>
   
 </div>
 <div id="readingdisplay" class="well" style="height: 500px; overflow: auto;"></div>
