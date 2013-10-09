@@ -135,33 +135,12 @@ function Artefact(data) {
     this.source = ko.observable(data.source);
     
     // Load Facsimile Details
-    self.loadFacsimiles = function() {
-        var defers = [];
-        if (!$.isArray(data.facsimiles)) {
-            return defers;
-        }
+    if (data.facsimiles) {
         for (var i = 0; i < data.facsimiles.length; i++) {
-            defers.push(
-                jQuery.ajax({
-                    type: 'GET',
-                    url: repApi + 'resources/' + data.facsimiles[i],
-                    dataType: "json",
-                    headers: {'Accept': 'application/json'}
-                }).then(function(result){
-                    var digitalResource = new DigitalResource(result);
-                    self.facsimiles.push(digitalResource);
-                    return digitalResource;
-                })
-            );
+            self.facsimiles.push(new DigitalResource(data.facsimiles[i]));
         }
-        return defers;
-    };
-    self.sortFacsimiles = function () {
-        self.artefacts.sort(function(left, right) {
-            return left.filename() === right.filename() ? 0 : (left.filename() < right.filename() ? -1 : 1);
-        });
-        return artefact;
-    };
+    }
+
     self.facsimileUrl = function(id) {
         return '#/facsimile/' + id;
     }
@@ -185,23 +164,22 @@ function Version(data, work) {
     var versionIds = data.versions || [];
     this.versionIds = ko.observableArray(versionIds);
    
-    this.allTranscriptions = ko.computed(function(){
-        var transcriptions = [];
-        
-        $.each(self.versions(), function() {
-            if (this instanceof Version) {
-                $.each(this.allTranscriptions(), function() {
-                    transcriptions.push(this);
-                });
-            }
-        });
-        $.each(self.transcriptions(), function(){
-            transcriptions.push(this);
-        })
+    this.allTranscriptions = function(){
+        var allTranscriptions = [];
+
+        var versions = self.versions();
+        for (var i = 0; i < versions.length; i++) {
+            allTranscriptions.push(versions[i].allTranscriptions());
+        }
+
+        var transcriptions = self.transcriptions();
+        for (var i = 0; i < transcriptions.length; i++) {
+            allTranscriptions.push(transcriptions[i]);
+        }
         
         //console.log("get all transcriptions for " + self.name() ,self.versions(), transcriptions)
-        return transcriptions;
-    });
+        return allTranscriptions;
+    }
     this.uri = ko.computed(function(){
         return baseUrl + '/repository/versions/' + self.id();
     });
@@ -219,48 +197,26 @@ function Version(data, work) {
         res += this.displayName();
         return res;
     }
+    // Load Versions
+    if (data.versions) {
+        for (var i = 0; i < data.versions.length; i++) {
+            self.versions.push(new Version(data.versions[i]));
+        }
 
+    }
 
     // Load Transcriptions
-    this.loadTranscriptions = function() {
-        var defers = [];
+    if (data.transcriptions) {
         for (var i = 0; i < data.transcriptions.length; i++) {
-            defers.push(
-                jQuery.ajax({
-                    type: 'GET',
-                    url: repApi + 'resources/' + data.transcriptions[i],
-                    dataType: "json",
-                    headers: {'Accept': 'application/json'}
-                }).then(function(result){
-                    var transcription = new DigitalResource(result);
-                    self.transcriptions.push(transcription);
-                    return transcription;
-                })
-            );
+            self.transcriptions.push(new DigitalResource(data.transcriptions[i]));
         }
-        return $.when.apply($, defers);
-    };
-
+    }
     // Load Artefacts
-    this.loadArtefacts = function() {
-        var defers = [];
+    if (data.artefacts) {
         for (var i = 0; i < data.artefacts.length; i++) {
-            defers.push(
-                jQuery.ajax({
-                    type: 'GET',
-                    url: repApi + 'artefacts/' + data.artefacts[i],
-                    dataType: "json",
-                    headers: {'Accept': 'application/json'}
-                }).then(function(result){
-                    var artefact = new Artefact(result);
-                    self.artefacts.push(artefact);
-                    return artefact;
-                })
-            );
+            self.artefacts.push(new Artefact(data.artefacts[i]));
         }
-
-        return $.when.apply($, defers);
-    };
+    }
 }
 ko.observableArray.fn.setAt = function(index, value) {
     this.valueWillMutate();
@@ -354,228 +310,188 @@ function WorkModel(workId) {
         })
     }
 
-    function loadVersion(versionId, parent, index) {
-        var versionUrl = repApi + 'versions/' + versionId;
-        var loadedVersion;
-        var allDone = jQuery.getJSON(versionUrl).then(function(versionData) {
-            loadedVersion = new Version(versionData, parent);
-            parent.versions.setAt(index, loadedVersion);
-            return loadedVersion;
-        }).then(function (version) {
-            return $.when(version.loadTranscriptions(), version.loadArtefacts());
-        }).then(function (transcription, artefact) {
-            if (transcription) {
-                //console.log('Transcription', transcription);
-            }
-            if (artefact) {
-                if (artefact.loadFacsimiles)
-                    artefact.loadFacsimiles();
-                else if ($.isArray(artefact)) {
-                    $.each(artefact, function() {
-                        this.loadFacsimiles();
-                    });
-                }
-            }
-            return null;
-        }).then(function () {
-            var added = [];
-            for (var i = 0; i < loadedVersion.versionIds().length; i++) {
-                var newVer = loadVersion(loadedVersion.versionIds()[i], loadedVersion, i);
-                added.push(newVer);
-            }
-            return added;
-        });
-        return allDone;
-    }
-
     // Load initial state
-    jQuery.getJSON(repApi + 'works/' + self.workId, function(workData) {
+    jQuery.getJSON(repApi + 'works/' + self.workId + "?recurse", function(workData) {
         self.workTitle(workData.workTitle);
         self.name(workData.name);
         self.updated(workData.updated);
         self.readingVersion(workData.readingVersion);
 
-        var versionLoadResponses = [];
         for (var i = 0; i < workData.versions.length; i++) {
-            versionLoadResponses.push(loadVersion(workData.versions[i], self, i));
+            self.versions.push(new Version(workData.versions[i]));
         };
 
 
+        // Setup all of the Sammy action routing
 
-        var whenAllVersionsLoaded = $.when.apply($, versionLoadResponses);
-
-        whenAllVersionsLoaded.done(function everythingLoaded() {
-            // Setup all of the Sammy action routing
-
-            // Client-side routes
-            app = $.sammy(function() {
-                
-                this.get('#/version/:version', function() {
-                    var version = getById(self.versions, this.params.version);
-                    self.activeVersion(version);
-                    var transcriptions = version.allTranscriptions();
-                    if (transcriptions.length > 0){
-                        transcriptions[0].displayTranscription();
-                    } else {
-                        this.trigger('beforeDocLoaded');
-                        $('#readingdisplay').empty();
-                        app.trigger('docLoaded');
-                    } 
-                    
-                });
-
-                this.get(/\#\/table\/(.*)/, function() {
-                    var mvdName = this.params.splat[0];
-
-                    var mvd = getById(self.mvds, mvdName, 'name');
-
+        // Client-side routes
+        app = $.sammy(function() {
+            
+            this.get('#/version/:version', function() {
+                var version = getById(self.versions, this.params.version);
+                self.activeVersion(version);
+                var transcriptions = version.allTranscriptions();
+                if (transcriptions.length > 0){
+                    transcriptions[0].displayTranscription();
+                } else {
                     this.trigger('beforeDocLoaded');
-                    jQuery('#readingdisplay').html(
-                        '<iframe id="mvdTable" src="'+mvd.tableUrl()+'" width="100%" height="100%"/>'
-                    );
-                    $('#mvdTable').on("load",function(){
-                        // load in fullscreen mode
-                        var windowjQuery = $('#mvdTable')[0].contentWindow.jQuery;
-                        var m = $('#mvdTable').contents().find('#metadata');
-                        windowjQuery.data(m[0], 'fullscreen', true)
-                        
-                    });
-                });
-
-
-                this.get(/\#\/compare\/(.*)/, function() {
-                    var mvdName = this.params.splat[0];
-
-                    var mvd = getById(self.mvds, mvdName, 'name');
-
-                    this.trigger('beforeDocLoaded');
-                    jQuery('#readingdisplay').html(
-                        '<iframe id="mvdCompare" src="'+mvd.compareUrl()+'" width="100%" height="100%"/>'
-                    );
-                    $('#mvdCompare').on("load",function(){
-                        // load in fullscreen mode
-                        var windowjQuery = $('#mvdCompare')[0].contentWindow.jQuery;
-                        var m = $('#mvdCompare').contents().find('#metadata');
-                        windowjQuery.data(m[0], 'fullscreen', true)
-                        
-                    });
-                });
-
-                this.get('#/facsimile/:facsimileId', function() {
-                    var facsimileId = this.params.facsimileId;
-                    var imageUrl = repApi + "resources/" + facsimileId;
-                    var resourceBase = baseUrl + '/repository/resources/';
-                    var dataId = resourceBase + facsimileId + '/content';
-
-                    this.trigger('beforeDocLoaded');
-
-                    
-                    var imgDiv = $('<div data-id="' + dataId + '"></div>').html($("<img class='thumbnail'></img>").attr("src", imageUrl));
-                    $('#readingdisplay').html(imgDiv);
-
+                    $('#readingdisplay').empty();
                     app.trigger('docLoaded');
-                    
-
-                    if (!self.activeVersion()) {
-                        var version = getVersionByFacsimileId(self.versions, facsimileId);
-                        self.activeVersion(version);
-                    }
-                });
-
-                this.get('#/transcription/:transcriptionId', function() {
-                    var transcriptionId = this.params.transcriptionId;
-                    var results = getVersionByTranscriptionId(self.versions, transcriptionId);
-                    if (results && results.length > 0) {
-                        var version = results[0];
-                        var transcription = results[1];
-                    } else {
-                        console.log("ABORT ABORT: no such transcription yet");
-                        return;
-                    }
-
-
-                    this.trigger('beforeDocLoaded');
-                    $('#readingdisplay').html('<b>Loading transcription...');
-                    if (!transcription.transcriptionContents) {
-                        // generate table of contents
-                        // get master list of all versions and parts
-                        // console.log("displaying transcription for " + transcription.filetype(), workModel, transcription);
-                       
-                        jQuery.ajax({
-                           url: transcription.contentUrl(),
-                           cache: false,
-                           headers: {
-                                   'Accept': 'application/xml,text/xml, text/plain;'
-                           },
-                           success: function(xml){
-                               var result;
-                               try{
-                                   if (transcription.filetype().match("xml")){
-                                       if (xslie){
-                                           result = xml.transformNode(xslie);
-                                       } else if (xslproc){
-                                           // console.log("transforming",xml)
-                                           xslproc.setParameter(null, "transcriptionId", transcription.id());
-                                           xslproc.setParameter(null, "transcriptionUrl", transcription.dataUrl());
-                                           result = xslproc.transformToFragment(xml,document);
-                                       }
-                                   } else {
-                                       // TODO add transcription parts to toc
-                                       result = "<div data-id='" + transcription.dataUrl() + "' class='span9 well white-well transcript'><pre>" + xml + "</pre></div>";
-                                   }
-                                   $('#readingdisplay').html(result).promise().done(function(){
-                                        try{
-                                            var versionmenu = $('[versionid="' + version.id() + '"] > ul').clone();
-                                            $('#readingdisplay .span3').append(versionmenu);
-                                            // ensure table of contents remains visible
-                                            $('#readingdisplay').scroll(function(){
-                                                $("#toc").css("marginTop", ($('#readingdisplay').scrollTop()) + "px");
-                                            });
-
-                                        } catch (e){
-                                            console.log("problem",e)
-                                        }
-                                      
-                                   });
-
-                               } catch (e){
-                                   console.log(e)
-                               }
-                               transcription.transcriptionContents = $('readingdisplay').html();
-                               app.trigger('docLoaded');
-                           }
-                         });
-                    } else {
-                        console.log(transcription.transcriptionContents);
-                        $('#readingdisplay').html(transcription.transcriptionContents);
-                        app.trigger('docLoaded');
-                    }
-
-                    if (!self.activeVersion()) {
-                        self.activeVersion(version);
-                    }
-
-                    loadMVDs(transcriptionId);
-                });
-
-                this.bind('beforeDocLoaded', function() {
-                    self.disableAnnotations();
-                });
-                this.bind('docLoaded', function() {
-                    $('.toclink').on('click',function(){
-                        //console.log("go to " + $(this).data('target'))
-                        var target = $('#' + $(this).data('target'));
-                        var container = $('#readingdisplay');
-                        container.animate({
-                            scrollTop: target.offset().top - container.offset().top + container.scrollTop()
-                        })
-                    })
-                    self.enableAnnotations();
-                });
-
+                } 
+                
             });
-            app.run();
+
+            this.get(/\#\/table\/(.*)/, function() {
+                var mvdName = this.params.splat[0];
+
+                var mvd = getById(self.mvds, mvdName, 'name');
+
+                this.trigger('beforeDocLoaded');
+                jQuery('#readingdisplay').html(
+                    '<iframe id="mvdTable" src="'+mvd.tableUrl()+'" width="100%" height="100%"/>'
+                );
+                $('#mvdTable').on("load",function(){
+                    // load in fullscreen mode
+                    var windowjQuery = $('#mvdTable')[0].contentWindow.jQuery;
+                    var m = $('#mvdTable').contents().find('#metadata');
+                    windowjQuery.data(m[0], 'fullscreen', true)
+                    
+                });
+            });
+
+
+            this.get(/\#\/compare\/(.*)/, function() {
+                var mvdName = this.params.splat[0];
+
+                var mvd = getById(self.mvds, mvdName, 'name');
+
+                this.trigger('beforeDocLoaded');
+                jQuery('#readingdisplay').html(
+                    '<iframe id="mvdCompare" src="'+mvd.compareUrl()+'" width="100%" height="100%"/>'
+                );
+                $('#mvdCompare').on("load",function(){
+                    // load in fullscreen mode
+                    var windowjQuery = $('#mvdCompare')[0].contentWindow.jQuery;
+                    var m = $('#mvdCompare').contents().find('#metadata');
+                    windowjQuery.data(m[0], 'fullscreen', true)
+                    
+                });
+            });
+
+            this.get('#/facsimile/:facsimileId', function() {
+                var facsimileId = this.params.facsimileId;
+                var imageUrl = repApi + "resources/" + facsimileId;
+                var resourceBase = baseUrl + '/repository/resources/';
+                var dataId = resourceBase + facsimileId + '/content';
+
+                this.trigger('beforeDocLoaded');
+
+                
+                var imgDiv = $('<div data-id="' + dataId + '"></div>').html($("<img class='thumbnail'></img>").attr("src", imageUrl));
+                $('#readingdisplay').html(imgDiv);
+
+                app.trigger('docLoaded');
+                
+
+                if (!self.activeVersion()) {
+                    var version = getVersionByFacsimileId(self.versions, facsimileId);
+                    self.activeVersion(version);
+                }
+            });
+
+            this.get('#/transcription/:transcriptionId', function() {
+                var transcriptionId = this.params.transcriptionId;
+                var results = getVersionByTranscriptionId(self.versions, transcriptionId);
+                if (results && results.length > 0) {
+                    var version = results[0];
+                    var transcription = results[1];
+                } else {
+                    console.log("ABORT ABORT: no such transcription yet");
+                    return;
+                }
+
+
+                this.trigger('beforeDocLoaded');
+                $('#readingdisplay').html('<b>Loading transcription...');
+                if (!transcription.transcriptionContents) {
+                    // generate table of contents
+                    // get master list of all versions and parts
+                    // console.log("displaying transcription for " + transcription.filetype(), workModel, transcription);
+                   
+                    jQuery.ajax({
+                       url: transcription.contentUrl(),
+                       cache: false,
+                       headers: {
+                               'Accept': 'application/xml,text/xml, text/plain;'
+                       },
+                       success: function(xml){
+                           var result;
+                           try{
+                               if (transcription.filetype().match("xml")){
+                                   if (xslie){
+                                       result = xml.transformNode(xslie);
+                                   } else if (xslproc){
+                                       // console.log("transforming",xml)
+                                       xslproc.setParameter(null, "transcriptionId", transcription.id());
+                                       xslproc.setParameter(null, "transcriptionUrl", transcription.dataUrl());
+                                       result = xslproc.transformToFragment(xml,document);
+                                   }
+                               } else {
+                                   // TODO add transcription parts to toc
+                                   result = "<div data-id='" + transcription.dataUrl() + "' class='span9 well white-well transcript'><pre>" + xml + "</pre></div>";
+                               }
+                               $('#readingdisplay').html(result).promise().done(function(){
+                                    try{
+                                        var versionmenu = $('[versionid="' + version.id() + '"] > ul').clone();
+                                        $('#readingdisplay .span3').append(versionmenu);
+                                        // ensure table of contents remains visible
+                                        $('#readingdisplay').scroll(function(){
+                                            $("#toc").css("marginTop", ($('#readingdisplay').scrollTop()) + "px");
+                                        });
+
+                                    } catch (e){
+                                        console.log("problem",e)
+                                    }
+                                  
+                               });
+
+                           } catch (e){
+                               console.log(e)
+                           }
+                           transcription.transcriptionContents = $('readingdisplay').html();
+                           app.trigger('docLoaded');
+                       }
+                     });
+                } else {
+                    console.log(transcription.transcriptionContents);
+                    $('#readingdisplay').html(transcription.transcriptionContents);
+                    app.trigger('docLoaded');
+                }
+
+                if (!self.activeVersion()) {
+                    self.activeVersion(version);
+                }
+
+                loadMVDs(transcriptionId);
+            });
+
+            this.bind('beforeDocLoaded', function() {
+                self.disableAnnotations();
+            });
+            this.bind('docLoaded', function() {
+                $('.toclink').on('click',function(){
+                    //console.log("go to " + $(this).data('target'))
+                    var target = $('#' + $(this).data('target'));
+                    var container = $('#readingdisplay');
+                    container.animate({
+                        scrollTop: target.offset().top - container.offset().top + container.scrollTop()
+                    })
+                })
+                self.enableAnnotations();
+            });
+
         });
+        app.run();
     });
 } // finish WorkModel
 
