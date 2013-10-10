@@ -235,11 +235,11 @@ function WorkModel(workId) {
     self.versions =  ko.observableArray([]);
     self.mvds = ko.observableArray([]);
     self.readingVersion = ko.observable();
-    self.versionCount = ko.computed(function() {return self.versions().length;});
-    self.selectedVersion = ko.observable(self.readingVersion());
-    self.selectedMvd = ko.observable();
     
     // Local page state
+    self.selectedMvd = ko.observable();
+    self.selectedVersion = ko.observable();  // contains string id
+    self.selectedTranscription = ko.observable();  // contains string id
     self.activeVersion = ko.observable();
     self.annotationsOn = ko.observable(true);
 
@@ -263,7 +263,8 @@ function WorkModel(workId) {
 
     // Element change subscriptions
     self.selectedVersion.subscribe(function (newVersion) {
-        location.hash = '/version/' + newVersion;
+        if (newVersion.indexOf('Select a version') < 0) // doesn't match
+            location.hash = '/version/' + newVersion;
     });
     self.annotationsOn.subscribe(function (annotationsEnabled) {
         if (annotationsEnabled) {
@@ -394,6 +395,8 @@ function WorkModel(workId) {
                     console.log("ABORT ABORT: no such transcription yet");
                     return;
                 }
+
+                self.selectedTranscription(transcriptionId);
 
 
                 this.trigger('beforeDocLoaded');

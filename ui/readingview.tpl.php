@@ -13,6 +13,7 @@ if (isset($_GET['project'])) {
   <li data-bind="attr: { versionid: id }">
     <!-- ko if: $data.transcriptions && transcriptions().length == 1 -->
       <!-- ko with: transcriptions()[0] -->
+          <!-- ko if: ($data.id() == $root.selectedTranscription()) --><b>***</b><!-- /ko -->
           <a href="#" data-bind="attr: { href: transcriptionUrl()}">
               <span data-bind=" text: $parent.displayName()"></span>
           </a>
@@ -21,6 +22,7 @@ if (isset($_GET['project'])) {
     <!-- ko if: $data.transcriptions && transcriptions().length > 1 -->
         <ul data-bind="foreach: transcriptions">
             <li>
+          <!-- ko if: ($data.id() == $root.selectedTranscription()) --><b>***</b><!-- /ko -->
                 <a href="#" data-bind="attr: { href: transcriptionUrl()}">
                     <span data-bind="text: $parent.displayName()"></span>
                 </a>
@@ -59,7 +61,7 @@ if (isset($_GET['project'])) {
         optionsCaption: 'Select a version...'"></select>
   <!-- /ko -->
 
-  <!-- ko if: mvds -->
+  <!-- ko if: mvds && mvds().length > 0 -->
   &nbsp;&nbsp;<b>Compare: </b>
   <select data-bind="options: mvds, optionsText: 'name', value: selectedMvd"></select>
   <div style="display:inline" data-bind="with: selectedMvd">
