@@ -163,18 +163,19 @@ function Version(data, work) {
     this.transcriptions = ko.observableArray([]);
     var versionIds = data.versions || [];
     this.versionIds = ko.observableArray(versionIds);
+
    
     this.allTranscriptions = function(){
         var allTranscriptions = [];
 
         var versions = self.versions();
         for (var i = 0; i < versions.length; i++) {
-            allTranscriptions.push(versions[i].allTranscriptions());
+            allTranscriptions = allTranscriptions.concat(versions[i].allTranscriptions());
         }
 
         var transcriptions = self.transcriptions();
         for (var i = 0; i < transcriptions.length; i++) {
-            allTranscriptions.push(transcriptions[i]);
+            allTranscriptions = allTranscriptions.concat(transcriptions[i]);
         }
         
         //console.log("get all transcriptions for " + self.name() ,self.versions(), transcriptions)
@@ -456,14 +457,13 @@ function WorkModel(workId) {
                                });
 
                            } catch (e){
-                               console.log(e)
+                               console.log('Caught exception trying to load transcription', e)
                            }
                            transcription.transcriptionContents = $('readingdisplay').html();
                            app.trigger('docLoaded');
                        }
                      });
                 } else {
-                    console.log(transcription.transcriptionContents);
                     $('#readingdisplay').html(transcription.transcriptionContents);
                     app.trigger('docLoaded');
                 }
