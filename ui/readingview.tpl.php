@@ -11,21 +11,6 @@ if (isset($_GET['project'])) {
 <script id="versionDisplay" type="text/html">
   <!-- ko if: $data -->
   <li data-bind="attr: { versionid: id }">
-<?php /*   <span data-bind="text: displayName()" /> 
-    <br> */ ?>
-
-<?php /*    <div data-bind="foreach: artefacts">
-    <!-- ko if: facsimiles().length > 0 -->
-            <b data-bind="text: source"></b><b> facsimiles:</b>
-            <ul data-bind="foreach: facsimiles">
-                <li>
-                    <a href="#" data-bind="attr: { href: $parent.facsimileUrl(id())}">
-                        <span data-bind="text: filename"></span>
-                    </a>
-                </li>
-            </ul>
-    <!-- /ko -->
-    </div> */ ?>
     <!-- ko if: $data.transcriptions && transcriptions().length == 1 -->
       <!-- ko with: transcriptions()[0] -->
           <a href="#" data-bind="attr: { href: transcriptionUrl()}">
@@ -68,15 +53,15 @@ if (isset($_GET['project'])) {
   <!-- ko if: versions -->
   <select data-bind="
         value: selectedVersion,
-        event: { change: selectVersion },
         options: versions,
-        optionsText: 'displayName',
-        optionsValue: 'id'"></select>
+        optionsText: 'dropdownDisplayName',
+        optionsValue: 'id',
+        optionsCaption: 'Select a version...'"></select>
   <!-- /ko -->
 
   <!-- ko if: mvds -->
   &nbsp;&nbsp;<b>Compare: </b>
-  <select data-bind="blah: console.log('Compare2'), options: mvds, optionsText: 'name', value: selectedMvd"></select>
+  <select data-bind="options: mvds, optionsText: 'name', value: selectedMvd"></select>
   <div style="display:inline" data-bind="with: selectedMvd">
     <button data-bind="click: displayCompare" class="btn">Side By Side</button>
     <button data-bind="click: displayTable" class="btn">Table</button>
@@ -85,7 +70,7 @@ if (isset($_GET['project'])) {
   
     
   <label class="annotationToggle pull-right checkbox">
-    <input  data-bind="blah: console.log($data), checked: annotationsOn" type="checkbox"> <a href="#" data-bind="click: toggleAnnotations">Annotations</a>
+    <input  name="annotationsOn" data-bind="checked: annotationsOn" type="checkbox"> <label for="annotationsOn">Annotations</label>
   </label>
  
   </form>
@@ -98,7 +83,6 @@ if (isset($_GET['project'])) {
 <div data-bind="with: activeVersion">
 <div class="span6">
     <!--p>Displaying version <a target="_blank" data-bind="attr: { href: uri, title: description }"><b data-bind="text: displayName"></b></a></p-->
-  &nbsp;&nbsp;<b>Compare: </b>
     <b>Transcriptions: </b>
     <ul data-bind="foreach: transcriptions">
         <li>

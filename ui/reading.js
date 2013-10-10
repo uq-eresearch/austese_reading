@@ -190,14 +190,14 @@ function Version(data, work) {
         + " " + self.publisher() + " " + self.date();
     });
 
-    this.dropdownDisplayName = function() {
+    this.dropdownDisplayName = ko.computed(function() {
         var res = '';
-        if (this.work() && this.work().readingVersion() && this.work().readingVersion() == this.id()) {
+        if (self.work() && self.work().readingVersion() && self.work().readingVersion() == self.id()) {
           res = '* ';
         }
-        res += this.displayName();
+        res += self.displayName();
         return res;
-    }
+    });
     // Load Versions
     if (data.versions) {
         for (var i = 0; i < data.versions.length; i++) {
@@ -241,28 +241,9 @@ function WorkModel(workId) {
     
     // Local page state
     self.activeVersion = ko.observable();
-    self.annotationsOn = ko.observable();
-
-    self.annotationsOn(true);
+    self.annotationsOn = ko.observable(true);
 
     // Local actions
-    self.toggleAnnotations = function() {
-        var state = self.annotationsOn();
-        self.annotationsOn(!state);
-    };
-    self.selectVersion = function(work) {
-        location.hash = '/version/' + work.selectedVersion();
-    };
-    self.getTranscriptions = function() {
-        var transcriptions = [];
-        $.each(workModel.versions(), function() {
-            $.each(this.allTranscriptions(), function() {
-                transcriptions.push(this);
-            });
-        });
-        return transcriptions;
-    };
-
     self.enableAnnotations = function() {
         if (self.annotationsOn() && typeof enableAnnotationsOnElement == 'function') {
             $('#readingdisplay').waitForImages(function(){
@@ -280,6 +261,10 @@ function WorkModel(workId) {
         $('#readingdisplay').find('[data-id]').annotationsEnabled = false;
     };
 
+    // Element change subscriptions
+    self.selectedVersion.subscribe(function (newVersion) {
+        location.hash = '/version/' + newVersion;
+    });
     self.annotationsOn.subscribe(function (annotationsEnabled) {
         if (annotationsEnabled) {
             self.enableAnnotations();
@@ -290,8 +275,7 @@ function WorkModel(workId) {
 
     // Load MVDs
     function loadMVDs(transcriptionId) {
-        var mvdLoaded = [],
-            transcriptions = workModel.getTranscriptions();
+        var mvdLoaded = [];
         // Clear current
         workModel.mvds([]);
 
