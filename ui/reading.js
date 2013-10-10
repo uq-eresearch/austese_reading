@@ -262,9 +262,11 @@ function WorkModel(workId) {
     };
 
     // Element change subscriptions
+    var updateUrl = false;
     self.selectedVersion.subscribe(function (newVersion) {
-        if (newVersion.indexOf('Select a version') < 0) // doesn't match
+        if (newVersion.indexOf('Select a version') < 0 && updateUrl) { // doesn't match
             location.hash = '/version/' + newVersion;
+        }
     });
     self.annotationsOn.subscribe(function (annotationsEnabled) {
         if (annotationsEnabled) {
@@ -397,6 +399,9 @@ function WorkModel(workId) {
                 }
 
                 self.selectedTranscription(transcriptionId);
+                updateUrl = false;
+                self.selectedVersion(version.id());
+                updateUrl = true;
 
 
                 this.trigger('beforeDocLoaded');
