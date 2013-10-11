@@ -262,7 +262,7 @@ function WorkModel(workId) {
     };
 
     // Element change subscriptions
-    var updateUrl = false;
+    var updateUrl = true;
     self.selectedVersion.subscribe(function (newVersion) {
         if (newVersion.indexOf('Select a version') < 0 && updateUrl) { // doesn't match
             location.hash = '/version/' + newVersion;
