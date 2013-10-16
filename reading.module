@@ -70,6 +70,7 @@ function reading_view() {
   drupal_set_breadcrumb($breadcrumb);
   $modulePath = drupal_get_path('module', 'reading');
   drupal_add_css($modulePath . '/ui/css/app.css');
+  drupal_add_css(drupal_get_path('module', 'repository') . '/ui/css/tei.css');
   drupal_add_js($modulePath . '/ui/knockout-2.2.1.js');
   drupal_add_js($modulePath . '/ui/sammy-0.7.4.min.js');
   drupal_add_js($modulePath . '/ui/reading.js');
