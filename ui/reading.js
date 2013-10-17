@@ -299,6 +299,7 @@ function WorkModel(workId) {
 
     // Load initial state
     jQuery.getJSON(repApi + 'works/' + self.workId + "?recurse", function(workData) {
+        // Load all the data
         self.workTitle(workData.workTitle);
         self.name(workData.name);
         self.updated(workData.updated);
@@ -308,6 +309,10 @@ function WorkModel(workId) {
             self.versions.push(new Version(workData.versions[i]));
         };
 
+        // Load the default reading version if it has been set
+        if (!location.hash && workData.readingVersion) {
+            location.hash = '/version/' + workData.readingVersion;
+        }
 
         // Setup all of the Sammy action routing
 
