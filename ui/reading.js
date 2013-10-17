@@ -149,9 +149,8 @@ function Artefact(data) {
     };
 }
 
-function Version(data, work) {
+function Version(data) {
     var self = this;
-    this.work = ko.observable(work);
     this.id = ko.observable(data.id);
     this.versionTitle = ko.observable(data.versionTitle);
     this.name = ko.observable(data.name);
@@ -192,7 +191,7 @@ function Version(data, work) {
 
     this.dropdownDisplayName = ko.computed(function() {
         var res = '';
-        if (self.work() && self.work().readingVersion() && self.work().readingVersion() == self.id()) {
+        if (workModel.readingVersion() == self.id()) {
           res = '* ';
         }
         res += self.displayName();
