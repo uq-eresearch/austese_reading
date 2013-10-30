@@ -69,12 +69,14 @@ if (isset($_GET['project'])) {
     <button data-bind="click: displayTable" class="btn">Table</button>
   </div>
   <!-- /ko -->
-  
-    
-  <label class="annotationToggle pull-right checkbox">
-    <input  name="annotationsOn" data-bind="checked: annotationsOn" type="checkbox"> <label for="annotationsOn">Annotations</label>
-  </label>
- 
+  <div class="pull-right">
+   <label class="pagesToggle checkbox">
+     <input  name="pagesOn" data-bind="checked: pagesOn" type="checkbox"> <label for="pagesOn">Page numbers</label>
+   </label>
+   <label class="annotationToggle checkbox">
+     <input  name="annotationsOn" data-bind="checked: annotationsOn" type="checkbox"> <label for="annotationsOn">Annotations</label>
+   </label>
+  </div>
   </form>
   
 </div>

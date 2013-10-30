@@ -241,7 +241,7 @@ function WorkModel(workId) {
     self.selectedTranscription = ko.observable();  // contains string id
     self.activeVersion = ko.observable();
     self.annotationsOn = ko.observable(true);
-
+    self.pagesOn = ko.observable(true);
     // Local actions
     self.enableAnnotations = function() {
         if (self.annotationsOn() && typeof enableAnnotationsOnElement == 'function') {
@@ -259,7 +259,14 @@ function WorkModel(workId) {
         }
         $('#readingdisplay').find('[data-id]').annotationsEnabled = false;
     };
-
+    self.enablePageNumbers = function(){
+        $('#readingdisplay').find('.pb').show();
+    };
+    self.disablePageNumbers = function(){
+        if (!self.pagesOn()){
+            $('#readingdisplay').find('.pb').hide();
+        }
+    };
     // Element change subscriptions
     var updateUrl = true;
     self.selectedVersion.subscribe(function (newVersion) {
@@ -272,6 +279,13 @@ function WorkModel(workId) {
             self.enableAnnotations();
         } else {
             self.disableAnnotations();
+        }
+    });
+    self.pagesOn.subscribe(function(pagesEnabled){
+        if (pagesEnabled) {
+            self.enablePageNumbers();
+        } else {
+            self.disablePageNumbers();
         }
     });
 
@@ -484,6 +498,7 @@ function WorkModel(workId) {
                     })
                 })
                 self.enableAnnotations();
+                self.disablePageNumbers();
             });
 
         });
