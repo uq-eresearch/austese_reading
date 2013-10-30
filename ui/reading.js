@@ -186,7 +186,7 @@ function Version(data) {
     this.displayName = ko.computed(function() {
         return self.versionTitle() +
         (self.name()? " (" + self.name() + ")" : "" )
-        + " " + self.publisher() + " " + self.date();
+        + " " + (self.publisher()? self.publisher() : "") + " " + (self.date()? self.date() : "");
     });
 
     this.dropdownDisplayName = ko.computed(function() {
