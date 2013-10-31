@@ -56,7 +56,7 @@
 </xsl:template>
 
 <xsl:template match="pb">
-<div class="pb" annotator_ignore="true">
+<div class="pb" annotator_ignore="true" unselectable="on">
     <xsl:if test="@n">
         <xsl:attribute name="data-n"><xsl:value-of select="@n"/></xsl:attribute>
         <xsl:value-of select="@n"/>
