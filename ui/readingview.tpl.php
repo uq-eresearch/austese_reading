@@ -41,7 +41,11 @@ if (isset($_GET['project'])) {
  data-baseurl="<?php print $baseUrl; ?>" 
  data-moduleurl="<?php print $moduleUrl; ?>"
  data-repapipath="<?php print $repApi;?>"
- data-workid="<?php print $workId; ?>">
+ <?php if ($project):?>
+  data-project="<?php print $project; ?>"
+ <?php endif; ?>
+ data-workid="<?php print $workId; ?>"
+ >
 </div>
 
 <a href="/repository/works/<?php print $workId; ?><?php if ($project): print '?project='.$project; endif; ?>"><h1 data-bind="text: workTitle"></h1></a>

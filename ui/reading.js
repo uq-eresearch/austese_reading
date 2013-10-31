@@ -291,13 +291,15 @@ function WorkModel(workId) {
 
     // Load MVDs
     function loadMVDs(transcriptionId) {
+        var project = jQuery('#metadata').data('project');
+
         var mvdLoaded = [];
         // Clear current
         workModel.mvds([]);
 
         jQuery.ajax({
             type: 'GET',
-            url: repApi + 'mvds/?query=' + transcriptionId,
+            url: repApi + 'mvds/?query=' + transcriptionId + "&project=" + project,
             dataType: "json",
             headers: {'Accept': 'application/json'}
         }).then(function(mvdData) {
