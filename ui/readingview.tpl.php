@@ -94,7 +94,7 @@ if (isset($_GET['project'])) {
 <div data-bind="with: activeVersion">
 <div class="span6">
     <!--p>Displaying version <a target="_blank" data-bind="attr: { href: uri, title: description }"><b data-bind="text: displayName"></b></a></p-->
-    <b>Transcriptions: </b>
+    <b>Version Transcriptions: </b>
     <ul data-bind="foreach: transcriptions">
         <li>
             <a href="#" data-bind="click: displayTranscription">
@@ -105,12 +105,27 @@ if (isset($_GET['project'])) {
             </a>
         </li>
     </ul>
+    <div data-bind="foreach: artefacts">
+    <!-- ko if: transcriptions().length > 0 -->
+      <b data-bind="text: source"></b><b> diplomatic transcriptions:</b>
+      <ul data-bind="foreach: transcriptions">
+          <li>
+              <a href="#" data-bind="click: $parent.displayTranscription">
+                  Display <span data-bind="text: filename"></span>
+              </a>
+              <a data-bind="attr: {href: recordUrl, title: displayTitle}">
+                  (View record)
+              </a>
+          </li>
+      </ul>
+    <!-- /ko -->
+    </div>
 </div>
 <div class="span6">
     <div data-bind="foreach: artefacts">
     <!-- ko if: facsimiles().length > 0 -->
-
-            <b data-bind="text: source"></b><b> facsimiles:</b>
+           
+            <b data-bind="text: source"></b><b> facsimiles (<span data-bind="text: facsimiles().length"></span>):</b>
             <ul data-bind="foreach: facsimiles">
                 <li>
                     <a href="#" data-bind="click: $parent.displayFacsimile">
@@ -121,7 +136,6 @@ if (isset($_GET['project'])) {
                     </a>
                 </li>
             </ul>
-
         <!-- /ko -->
     </div>
    </div>

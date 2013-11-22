@@ -68,7 +68,24 @@ function getVersionByFacsimileId(versions, objId, fieldname) {
         }
     }
 }
-
+function getVersionByDiplomaticTranscriptionId(versions, objId, fieldname) {
+    if (!fieldname) fieldname = 'transcriptions';
+    var versions = versions();
+    for (var i = 0; i < versions.length; i++) {
+        var version = versions[i];
+        var artefacts = version.artefacts();
+        
+        for (var j = 0; j < artefacts.length; j++) {
+            var artefact = artefacts[j];
+            for (var k = 0; k < artefact[fieldname]().length; k++) {
+                var obj = artefact[fieldname]()[k];
+                if (obj.id() === objId) {
+                    return [version, obj];
+                }
+            }
+        }
+    }
+}
 
 function MVD(data) {
     var self = this;
@@ -130,6 +147,7 @@ function DigitalResource(data) {  // Resource
 function Artefact(data) {
     var self = this;
     this.facsimiles = ko.observableArray([]);
+    this.transcriptions = ko.observableArray([]);
     this.id = ko.observable(data.id);
     this.uri = ko.observable(data.uri);
     this.source = ko.observable(data.source);
@@ -137,7 +155,15 @@ function Artefact(data) {
     // Load Facsimile Details
     if (data.facsimiles) {
         for (var i = 0; i < data.facsimiles.length; i++) {
-            self.facsimiles.push(new DigitalResource(data.facsimiles[i]));
+            var facs = data.facsimiles[i];
+            if (facs && facs.id){
+                self.facsimiles.push(new DigitalResource(facs));
+            }
+        }
+    }
+    if (data.transcriptions){
+        for (var i = 0; i < data.transcriptions.length; i++) {
+           self.transcriptions.push(new DigitalResource(data.transcriptions[i]));
         }
     }
 
@@ -147,6 +173,9 @@ function Artefact(data) {
     self.displayFacsimile = function(facsimile) {
         location.hash = '/facsimile/' + facsimile.id();
     };
+    self.displayTranscription = function(transcription){
+        location.hash = '/transcription/' + transcription.id()
+    }
 }
 
 function Version(data) {
@@ -406,7 +435,7 @@ function WorkModel(workId) {
                     self.activeVersion(version);
                 }
             });
-
+           
             this.get('#/transcription/:transcriptionId', function() {
                 var transcriptionId = this.params.transcriptionId;
                 var results = getVersionByTranscriptionId(self.versions, transcriptionId);
@@ -414,8 +443,14 @@ function WorkModel(workId) {
                     var version = results[0];
                     var transcription = results[1];
                 } else {
-                    console.log("ABORT ABORT: no such transcription yet");
-                    return;
+                    results = getVersionByDiplomaticTranscriptionId(self.versions, transcriptionId);
+                    if (results && results.length > 0){
+                        var version = results[0];
+                        var transcription = results[1];
+                    } else {
+                        console.log("ABORT ABORT: no such transcription yet");
+                        return;
+                    }
                 }
 
                 self.selectedTranscription(transcriptionId);
