@@ -371,9 +371,18 @@ function WorkModel(workId) {
                 if (transcriptions.length > 0){
                     transcriptions[0].displayTranscription();
                 } else {
-                    this.trigger('beforeDocLoaded');
-                    $('#readingdisplay').empty();
-                    app.trigger('docLoaded');
+                    // try for diplomatic transcription instead
+                    var artefacts = version.artefacts();
+                    if (artefacts.length > 0){
+                        transcriptions = artefacts[0].transcriptions();
+                    }
+                    if (transcriptions.length > 0){
+                        transcriptions[0].displayTranscription()
+                    } else {
+                        this.trigger('beforeDocLoaded');
+                        $('#readingdisplay').empty();
+                        app.trigger('docLoaded');
+                    }
                 } 
                 
             });
