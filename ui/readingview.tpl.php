@@ -29,6 +29,9 @@ if (isset($_GET['project'])) {
             </li>
         </ul>
     <!-- /ko -->
+    <!-- ko if: $data.transcriptions && transcriptions().length == 0 -->
+      <span data-bind="text: name"></span>
+    <!-- /ko -->
     <ul data-bind="template: { name: 'versionDisplay', foreach: versions }"></ul>
   
   </li>

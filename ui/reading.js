@@ -451,7 +451,7 @@ function WorkModel(workId) {
                                    }
                                } else {
                                    // TODO add transcription parts to toc
-                                   result = "<div data-id='" + transcription.dataUrl() + "' class='span9 well white-well transcript'><pre>" + xml + "</pre></div>";
+                                   result = "<div style='height:520px;overflow:auto;padding-right:1em;' id='toc' class='span3'></div><div data-id='" + transcription.dataUrl() + "' class='span9 well white-well transcript'><pre>" + xml + "</pre></div>";
                                }
                                $('#readingdisplay').html(result).promise().done(function(){
                                     try{
