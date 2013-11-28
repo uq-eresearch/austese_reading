@@ -6,14 +6,33 @@
     <xsl:param name="transcriptionId"/>
     <xsl:param name="transcriptionUrl"/>
     <xsl:template match="/">
-        <div class="row-fluid">
-            <div style="height:520px;overflow:auto;padding-right:1em;" id="toc" class="span3">
-                <ul>
-                    <xsl:apply-templates select="//head" mode="toc"/>
-                </ul>
-            </div>
-            <div data-id="{$transcriptionUrl}" class="span9 well white-well"><div class="transcript"><xsl:apply-templates/></div></div>
-        </div>
+    	<html>
+    		<head>
+    			<style type="text/css">        							
+    				.MJSA + .MJS{
+    					display: none;
+    				}
+    				
+    				.MJSA:hover + .MJS{
+    					display: block;
+    				}
+    				
+    				.MJS:hover {
+    					display: block;
+    				}
+    			</style>
+    		</head>
+    		<body>
+		        <div class="row-fluid">
+		            <div style="height:520px;overflow:auto;padding-right:1em;" id="toc" class="span3">
+		                <ul>
+		                    <xsl:apply-templates select="//head" mode="toc"/>
+		                </ul>
+		            </div>
+		            <div data-id="{$transcriptionUrl}" class="span9 well white-well"><div class="transcript"><xsl:apply-templates/></div></div>
+		        </div>
+    		</body>
+    	</html>
     </xsl:template>
     
     <xsl:template match="head" mode="toc">
@@ -308,8 +327,15 @@
 <div class="letter"><xsl:apply-templates/></div>
 </xsl:template>
 
-<xsl:template match="//div[@type='MJSnote']">
-<div class="MJSnote"><xsl:apply-templates/></div>
+<xsl:template match="//note[@resp='MJS'] | //div[@type='MJSnote']">
+<div style="position: relative;">
+<div style="padding-bottom: 230px; padding-right: 500px; position: absolute;"></div>
+<a class="MJSA" href="javascript:void(0);" style="position: relative;">[note]</a>
+<span class="MJS" style="position: absolute; width: 500px; height: 200px;
+		border: 1px solid black; background: white; overflow: auto;">
+  		<xsl:apply-templates/>
+</span>
+</div>
 </xsl:template>
 
 <xsl:template match="//div[@type='poem']">
