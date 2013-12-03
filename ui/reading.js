@@ -118,7 +118,8 @@ function DigitalResource(data) {  // Resource
         return repApi + 'resources/' + self.id()
     });
     this.recordUrl = ko.computed(function(){
-        return baseUrl + "/repository/resources/" + self.id();
+        var project = jQuery('#metadata').data('project');
+        return baseUrl + "/repository/resources/" + self.id() + (project? "?project=" + project : "");
     });
     this.rawContentUrl = ko.computed(function() {
          return baseUrl + "/repository/resources/" + self.id() + "/content/raw"; 
