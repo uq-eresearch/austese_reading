@@ -358,6 +358,9 @@ function WorkModel(workId) {
         // Load the default reading version if it has been set
         if (!location.hash && workData.readingVersion) {
             location.hash = '/version/' + workData.readingVersion;
+        // Else load the first verion
+        } else if (!location.hash && workData.versions.length > 0) {
+        	location.hash = '/version/' + workData.versions[0].id;
         }
 
         // Setup all of the Sammy action routing
