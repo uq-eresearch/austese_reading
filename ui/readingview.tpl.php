@@ -116,6 +116,15 @@ if (isset($_GET['project'])) {
               <a data-bind="attr: {href: recordUrl, title: displayTitle}">
                   (View record)
               </a>
+              <a data-bind="attr: {href: contentUrl, title: displayTitle}">
+                  <i class="sidebaricon fa fa-download"></i>
+              </a>
+              <a title="PDF" data-bind="attr: {href: pdfUrl}">
+                  <i class="sidebaricon fa icomoon-file-pdf"></i>
+              </a>
+              <a title="Word" data-bind="attr: {href: wordUrl}">
+                  <i class="sidebaricon fa icomoon-file-word"></i>
+              </a>
           </li>
       </ul>
     <!-- /ko -->
